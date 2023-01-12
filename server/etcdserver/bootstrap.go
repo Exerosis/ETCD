@@ -28,6 +28,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 
+	"github.com/exerosis/raft"
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
 	"go.etcd.io/etcd/client/pkg/v3/types"
@@ -47,8 +49,6 @@ import (
 	"go.etcd.io/etcd/server/v3/storage/schema"
 	"go.etcd.io/etcd/server/v3/storage/wal"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
-	"go.etcd.io/raft/v3"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 func bootstrap(cfg config.ServerConfig) (b *bootstrappedServer, err error) {

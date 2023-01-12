@@ -21,7 +21,7 @@ import (
 
 	"go.uber.org/zap/zaptest"
 
-	"go.etcd.io/raft/v3/raftpb"
+	"github.com/exerosis/raft/raftpb"
 )
 
 func BenchmarkWarnOfExpensiveRequestNoLog(b *testing.B) {

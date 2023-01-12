@@ -24,7 +24,7 @@ There are following modules:
   - **go.etcd.io/etcd/client/v2** - legacy client library used to contact etcd
   over HTTP protocol. Deprecated. All new usage should depend on /v3 library.
 
-  - **go.etcd.io/raft/v3** - implementation of distributed consensus
+  - **github.com/exerosis/raft** - implementation of distributed consensus
   protocol. Should have no etcd specific code. Hosted in a separate repository:
   https://github.com/etcd-io/raft.
 

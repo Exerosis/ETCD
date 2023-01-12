@@ -28,6 +28,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/exerosis/raft"
+	"github.com/exerosis/raft/raftpb"
 	bolt "go.etcd.io/bbolt"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
@@ -45,8 +47,6 @@ import (
 	"go.etcd.io/etcd/server/v3/storage/wal"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
 	"go.etcd.io/etcd/server/v3/verify"
-	"go.etcd.io/raft/v3"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 // Manager defines snapshot methods.

@@ -19,9 +19,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 func TestMsgAppV2(t *testing.T) {

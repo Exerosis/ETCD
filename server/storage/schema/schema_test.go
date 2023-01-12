@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/api/v3/membershippb"
 	"go.etcd.io/etcd/api/v3/version"
@@ -29,7 +30,6 @@ import (
 	betesting "go.etcd.io/etcd/server/v3/storage/backend/testing"
 	"go.etcd.io/etcd/server/v3/storage/wal"
 	waltesting "go.etcd.io/etcd/server/v3/storage/wal/testing"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 func TestValidate(t *testing.T) {

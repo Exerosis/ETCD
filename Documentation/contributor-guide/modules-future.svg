@@ -599,6 +599,6 @@
          id="tspan646"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.2547px;font-family:sans-serif;-inkscape-font-specification:Normal;stroke-width:1.31282"
          x="226.04295"
-         y="209.53244">go.etcd.io/raft/v3</tspan></text>
+         y="209.53244">github.com/exerosis/raft</tspan></text>
   </g>
 </svg>

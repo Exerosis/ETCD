@@ -17,11 +17,13 @@ replace (
 	go.etcd.io/etcd => ./FORBIDDEN_DEPENDENCY
 	go.etcd.io/etcd/v3 => ./FORBIDDEN_DEPENDENCY
 	go.etcd.io/tests/v3 => ./FORBIDDEN_DEPENDENCY
+	github.com/exerosis/raft => ../../Raft
 )
 
 require (
 	github.com/coreos/go-semver v0.3.0
 	github.com/dustin/go-humanize v1.0.0
+	github.com/exerosis/raft v0.0.0-20230112182013-38a3db438b74
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.6.1
 	go.etcd.io/bbolt v1.3.6
@@ -30,7 +32,6 @@ require (
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0
 	go.etcd.io/etcd/pkg/v3 v3.6.0-alpha.0
 	go.etcd.io/etcd/server/v3 v3.6.0-alpha.0
-	go.etcd.io/raft/v3 v3.0.0-20221201111702-eaa6808e1f7a
 	go.uber.org/zap v1.24.0
 )
 

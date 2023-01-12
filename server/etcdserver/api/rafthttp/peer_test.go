@@ -17,7 +17,7 @@ package rafthttp
 import (
 	"testing"
 
-	"go.etcd.io/raft/v3/raftpb"
+	"github.com/exerosis/raft/raftpb"
 )
 
 func TestPeerPick(t *testing.T) {

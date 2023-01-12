@@ -3,6 +3,7 @@ module go.etcd.io/etcd/v3
 go 1.19
 
 replace (
+	github.com/exerosis/raft => ../Raft
 	go.etcd.io/etcd/api/v3 => ./api
 	go.etcd.io/etcd/client/pkg/v3 => ./client/pkg
 	go.etcd.io/etcd/client/v2 => ./client/v2
@@ -19,6 +20,7 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/coreos/go-semver v0.3.0
 	github.com/dustin/go-humanize v1.0.0
+	github.com/exerosis/raft v0.0.0-20230112182013-38a3db438b74
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.etcd.io/bbolt v1.3.6
@@ -31,7 +33,6 @@ require (
 	go.etcd.io/etcd/pkg/v3 v3.6.0-alpha.0
 	go.etcd.io/etcd/server/v3 v3.6.0-alpha.0
 	go.etcd.io/etcd/tests/v3 v3.6.0-alpha.0
-	go.etcd.io/raft/v3 v3.0.0-20221201111702-eaa6808e1f7a
 	go.uber.org/zap v1.24.0
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858
 	google.golang.org/grpc v1.51.0

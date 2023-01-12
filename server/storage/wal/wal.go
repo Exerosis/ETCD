@@ -26,11 +26,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/exerosis/raft"
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
 	"go.etcd.io/etcd/pkg/v3/pbutil"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
-	"go.etcd.io/raft/v3"
-	"go.etcd.io/raft/v3/raftpb"
 
 	"go.uber.org/zap"
 )

@@ -23,7 +23,7 @@ GRPC_GATEWAY_BIN=$(tool_get_bin github.com/grpc-ecosystem/grpc-gateway/protoc-ge
 SWAGGER_BIN=$(tool_get_bin github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger)
 GOGOPROTO_ROOT="$(tool_pkg_dir github.com/gogo/protobuf/proto)/.."
 GRPC_GATEWAY_ROOT="$(tool_pkg_dir github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway)/.."
-RAFT_ROOT="$(tool_pkg_dir go.etcd.io/raft/v3/raftpb)/.."
+RAFT_ROOT="$(tool_pkg_dir github.com/exerosis/raft/raftpb)/.."
 
 echo
 echo "Resolved binary and packages versions:"
@@ -46,7 +46,7 @@ for dir in ${DIRS}; do
       --plugin="${GOFAST_BIN}" ./**/*.proto
 
     run sed -i.bak -E 's|"etcd/api/|"go.etcd.io/etcd/api/v3/|g' ./**/*.pb.go
-    run sed -i.bak -E 's|"raftpb"|"go.etcd.io/raft/v3/raftpb"|g' ./**/*.pb.go
+    run sed -i.bak -E 's|"raftpb"|"github.com/exerosis/raft/raftpb"|g' ./**/*.pb.go
     run sed -i.bak -E 's|"google/protobuf"|"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"|g' ./**/*.pb.go
 
     rm -f ./**/*.bak

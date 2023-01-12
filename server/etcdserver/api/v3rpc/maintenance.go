@@ -22,6 +22,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
+	"github.com/exerosis/raft"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/api/v3/version"
@@ -32,7 +33,6 @@ import (
 	"go.etcd.io/etcd/server/v3/storage/backend"
 	"go.etcd.io/etcd/server/v3/storage/mvcc"
 	"go.etcd.io/etcd/server/v3/storage/schema"
-	"go.etcd.io/raft/v3"
 
 	"go.uber.org/zap"
 )

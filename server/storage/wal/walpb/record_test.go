@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/descriptor"
 
-	"go.etcd.io/raft/v3/raftpb"
+	"github.com/exerosis/raft/raftpb"
 )
 
 func TestSnapshotMetadataCompatibility(t *testing.T) {

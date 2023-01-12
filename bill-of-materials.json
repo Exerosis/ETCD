@@ -522,7 +522,7 @@
 		]
 	},
 	{
-		"project": "go.etcd.io/raft/v3",
+		"project": "github.com/exerosis/raft",
 		"licenses": [
 			{
 				"type": "Apache License 2.0",

@@ -20,8 +20,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/server/v3/storage/backend"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 // MustUnsafeSaveConfStateToBackend persists confState using given transaction (tx).

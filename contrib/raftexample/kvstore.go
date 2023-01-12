@@ -21,8 +21,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 // a key-value store backed by raft

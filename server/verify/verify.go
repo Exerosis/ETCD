@@ -19,13 +19,13 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/client/pkg/v3/verify"
 	"go.etcd.io/etcd/server/v3/storage/backend"
 	"go.etcd.io/etcd/server/v3/storage/datadir"
 	"go.etcd.io/etcd/server/v3/storage/schema"
 	wal2 "go.etcd.io/etcd/server/v3/storage/wal"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 const ENV_VERIFY_VALUE_STORAGE_WAL verify.VerificationType = "storage_wal"

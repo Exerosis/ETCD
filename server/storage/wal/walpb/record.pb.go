@@ -9,9 +9,9 @@ import (
 	math "math"
 	math_bits "math/bits"
 
+	raftpb "github.com/exerosis/raft/raftpb"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/golang/protobuf/proto"
-	raftpb "go.etcd.io/raft/v3/raftpb"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

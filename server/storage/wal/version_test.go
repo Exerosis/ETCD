@@ -23,11 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/api/v3/membershippb"
 	"go.etcd.io/etcd/api/v3/version"
 	"go.etcd.io/etcd/pkg/v3/pbutil"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 func TestEtcdVersionFromEntry(t *testing.T) {

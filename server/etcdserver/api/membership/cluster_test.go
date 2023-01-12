@@ -23,11 +23,11 @@ import (
 
 	"go.uber.org/zap/zaptest"
 
+	"github.com/exerosis/raft/raftpb"
 	"go.etcd.io/etcd/client/pkg/v3/testutil"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v2store"
 	"go.etcd.io/etcd/server/v3/mock/mockstore"
-	"go.etcd.io/raft/v3/raftpb"
 )
 
 func TestClusterMember(t *testing.T) {
