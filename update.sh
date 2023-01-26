@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
+cd ../Raft || exit
 git pull
+cd ../RabiaGo || exit
+git pull
+cd ../ETCD || exit
+git pull
+
 make build
 sudo ./bin/etcd --log-level panic \
 --name infra0 \
