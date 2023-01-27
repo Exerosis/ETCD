@@ -2,7 +2,7 @@
 
 leader=http://localhost:2379
 # assume three servers
-servers=( http://localhost:2379 http://localhost:22379 http://localhost:32379 )
+servers=( http://192.168.1.1:2379 http://192.168.1.2:2379 http://192.168.1.3:2379 )
 
 keyarray=( 64 256 )
 
