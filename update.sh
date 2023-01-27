@@ -18,11 +18,12 @@ elif [ $HOST = "node-3" ]; then
 fi
 echo "Local IP: $IP"
 
+rm -rf "$HOST.etcd"
 make build
 sudo ./bin/etcd --log-level panic \
 --name "$HOST" \
 --initial-cluster-token etcd-cluster-1 \
---listen-client-urls http://"$IP":2379 \
+--listen-client-urls http://"$IP":2379,http://127.0.0.1:2379 \
 --advertise-client-urls http://"$IP":2379 \
 --initial-advertise-peer-urls http://"$IP":12380 \
 --listen-peer-urls http://"$IP":12380 \
