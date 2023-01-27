@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 cd ../Raft || exit
 git pull
 cd ../RabiaGo || exit
