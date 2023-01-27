@@ -22,7 +22,7 @@ make build
 sudo ./bin/etcd --log-level panic \
 --name "$HOST" \
 --initial-cluster-token etcd-cluster-1 \
---initial-advertise-peer-urls http://"$IP":12380 \
+--initial-advertise-peer-urls http://"$IP":2380 \
 --listen-client-urls http://"$IP":2379 \
 --advertise-client-urls http://"$IP":2379 \
 --listen-peer-urls http://"$IP":12380 \
