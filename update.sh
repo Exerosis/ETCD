@@ -1,10 +1,10 @@
 #!/bin/bash
 cd ../Raft || exit
-git pull
+git stash && git stash clear && git pull
 cd ../RabiaGo || exit
-git pull
+git stash && git stash clear && git pull
 cd ../ETCD || exit
-git pull
+git stash && git stash clear && git pull
 
 HOST=$(hostname | awk -F "." '{print $1}')
 echo "Hostname: $HOST"
