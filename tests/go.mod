@@ -63,7 +63,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/exerosis/RabiaGo v0.0.0-20230126032346-5b600a95b27c // indirect
+	github.com/exerosis/RabiaGo v0.0.0-20230127121507-d215c8b12cba // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

@@ -52,7 +52,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/exerosis/RabiaGo v0.0.0-20230126032346-5b600a95b27c // indirect
+	github.com/exerosis/RabiaGo v0.0.0-20230127121507-d215c8b12cba // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect

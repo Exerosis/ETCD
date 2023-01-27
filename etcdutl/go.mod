@@ -40,7 +40,7 @@ require (
 	github.com/better-concurrent/guc v0.0.0-20190520022744-eb29266403a1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/exerosis/RabiaGo v0.0.0-20230126032346-5b600a95b27c // indirect
+	github.com/exerosis/RabiaGo v0.0.0-20230127121507-d215c8b12cba // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
