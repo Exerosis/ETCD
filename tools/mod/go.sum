@@ -49,8 +49,6 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/exerosis/RabiaGo v0.0.0-20230126032346-5b600a95b27c h1:Y7D0aHLIUs5rHIOQhaaPm4GdetWnAYcp3wJCt0UqyOM=
-github.com/exerosis/RabiaGo v0.0.0-20230126032346-5b600a95b27c/go.mod h1:FGG2A8lWITZ8UZg97KikMVNfV/XVFL50wUkj7aqD7hM=
 github.com/exerosis/raft v0.0.0-20230126024942-a0cbac5a99fe h1:btJ+wJM/NGxcwXuNrTbNz7WLez01ChY1/ZjKb317Vqk=
 github.com/exerosis/raft v0.0.0-20230126024942-a0cbac5a99fe/go.mod h1:RTCkwZImIMm8r9KNfphuevfDifkYcUb5Ft8/5/fqXPo=
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=

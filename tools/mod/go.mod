@@ -2,6 +2,8 @@ module go.etcd.io/etcd/tools/v3
 
 go 1.19
 
+replace github.com/exerosis/RabiaGo => ../../../RabiaGo
+
 require (
 	github.com/alexkohler/nakedret v1.0.1
 	github.com/chzchzchz/goword v0.0.0-20170907005317-a9744cb52b03
