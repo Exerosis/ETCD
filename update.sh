@@ -7,6 +7,8 @@ cd ../ETCD || exit
 git pull
 
 HOST=$(hostname | awk -F "." '{print $1}')
+echo "Hostname: $HOST"
+
 if [ $HOST == "node-1" ]; then
     IP="192.168.1.1"
 elif [ $HOST == "node-2" ]; then
@@ -14,8 +16,6 @@ elif [ $HOST == "node-2" ]; then
 elif [ $HOST == "node-3" ]; then
     IP="192.168.1.3"
 fi
-
-echo "Hostname: $HOST"
 echo "Local IP: $IP"
 
 make build
