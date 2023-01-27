@@ -15,6 +15,9 @@ elif [ $HOST == "node-3" ]; then
     IP="192.168.1.3"
 fi
 
+echo "Hostname: $HOST"
+echo "Local IP: $IP"
+
 make build
 sudo ./bin/etcd --log-level panic \
 --name "$HOST" \
