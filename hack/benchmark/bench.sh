@@ -2,9 +2,9 @@
 
 leader=http://localhost:2379
 # assume three servers
-servers=( http://192.168.1.1:2379 http://192.168.1.2:2379 http://192.168.1.3:2379 )
+servers=( http://192.168.1.1:12380 http://192.168.1.2:2380 http://192.168.1.3:2380 )
 
-keyarray=( 64 256 )
+keyarray=( 64 )
 
 for keysize in ${keyarray[@]}; do
 
