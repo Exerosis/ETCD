@@ -1161,6 +1161,7 @@ func (s *EtcdServer) hasMultipleVotingMembers() bool {
 }
 
 func (s *EtcdServer) isLeader() bool {
+	println("IS LEADER: ", uint64(s.MemberId()) == s.Lead())
 	return uint64(s.MemberId()) == s.Lead()
 }
 
@@ -1600,7 +1601,6 @@ func (s *EtcdServer) getTerm() uint64 {
 }
 
 func (s *EtcdServer) setLead(v uint64) {
-	println("LEADER IS NOW: ", v)
 	atomic.StoreUint64(&s.lead, v)
 }
 
