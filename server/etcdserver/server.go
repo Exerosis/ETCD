@@ -1161,7 +1161,7 @@ func (s *EtcdServer) hasMultipleVotingMembers() bool {
 }
 
 func (s *EtcdServer) isLeader() bool {
-	println("IS LEADER: ", uint64(s.MemberId()) == s.Lead())
+	println("MEMBER: ", uint64(s.MemberId()), " LEADER: ", s.Lead())
 	return uint64(s.MemberId()) == s.Lead()
 }
 
