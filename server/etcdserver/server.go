@@ -1624,7 +1624,7 @@ func (s *EtcdServer) MemberId() types.ID { return s.memberId }
 
 func (s *EtcdServer) Leader() types.ID { return types.ID(s.getLead()) }
 
-func (s *EtcdServer) Lead() uint64 { return s.getLead() }
+func (s *EtcdServer) Lead() uint64 { return uint64(s.memberId) }
 
 func (s *EtcdServer) CommittedIndex() uint64 { return s.getCommittedIndex() }
 
