@@ -1600,6 +1600,7 @@ func (s *EtcdServer) getTerm() uint64 {
 }
 
 func (s *EtcdServer) setLead(v uint64) {
+	println("LEADER IS NOW: ", v)
 	atomic.StoreUint64(&s.lead, v)
 }
 
