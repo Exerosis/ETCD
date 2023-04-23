@@ -37,6 +37,7 @@ require (
 )
 
 require (
+	github.com/BertoldVdb/go-misc v0.1.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/better-concurrent/guc v0.0.0-20190520022744-eb29266403a1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect

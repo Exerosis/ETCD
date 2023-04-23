@@ -42,6 +42,7 @@ require (
 
 require (
 	cloud.google.com/go v0.81.0 // indirect
+	github.com/BertoldVdb/go-misc v0.1.8 // indirect
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
