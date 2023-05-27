@@ -16,15 +16,19 @@ package etcdserver
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"github.com/exerosis/PineappleGo/pineapple"
 	"math"
 	"math/rand"
+	"net"
 	"net/http"
 	"path"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -216,9 +220,9 @@ type EtcdServer struct {
 
 	consistIndex cindex.ConsistentIndexer // consistIndex is used to get/set/save consistentIndex
 	r            raftNode                 // uses 64-bit atomics; keep 64-bit aligned.
-
-	readych chan struct{}
-	Cfg     config.ServerConfig
+	pineapple    pineapple.Node[pineapple.Cas]
+	readych      chan struct{}
+	Cfg          config.ServerConfig
 
 	lgMu *sync.RWMutex
 	lg   *zap.Logger
@@ -300,6 +304,36 @@ type EtcdServer struct {
 	corruptionChecker CorruptionChecker
 }
 
+type EtcdStorage struct {
+	etcd *EtcdServer
+}
+
+func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
+	var options = mvcc.RangeOptions{}
+	result, err := e.etcd.kv.Range(context.Background(), key, nil, options)
+	if err != nil {
+		panic(err)
+	}
+	var bytes = result.KVs[0].Value
+	var revision = binary.LittleEndian.Uint64(bytes)
+	return revision, bytes[8:]
+}
+
+func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
+	tag, _ := e.Get(key)
+	return tag
+}
+
+func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
+	if len(value) == 0 {
+		e.etcd.kv.DeleteRange(key, nil)
+		return
+	}
+	var bytes = make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, tag)
+	e.etcd.kv.Put(key, append(bytes, value...), 0)
+}
+
 // NewServer creates a new EtcdServer from the supplied configuration. The
 // configuration is considered static for the lifetime of the EtcdServer.
 func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
@@ -317,6 +351,37 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	sstats := stats.NewServerStats(cfg.Name, b.cluster.cl.String())
 	lstats := stats.NewLeaderStats(cfg.Logger, b.cluster.nodeID.String())
 
+	interfaces, reason := net.Interfaces()
+	if reason != nil {
+		panic(reason)
+	}
+	var network net.Interface
+	var device net.Addr
+	for _, i := range interfaces {
+		addresses, reason := i.Addrs()
+		if reason != nil {
+			panic(reason)
+		}
+		for _, d := range addresses {
+			if strings.Contains(d.String(), "192.168.1.") {
+				device = d
+				network = i
+			}
+		}
+	}
+	if device == nil {
+		panic("couldn't find interface")
+	}
+
+	fmt.Printf("Interface: %s\n", network.Name)
+	fmt.Printf("Address: %s\n", device)
+
+	var address = strings.Split(device.String(), "/")[0]
+	var addresses = []string{
+		"192.168.1.1:2000",
+		"192.168.1.2:2000",
+		"192.168.1.3:2000",
+	}
 	heartbeat := time.Duration(cfg.TickMs) * time.Millisecond
 	srv = &EtcdServer{
 		readych:               make(chan struct{}),
@@ -373,6 +438,10 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		CompactionSleepInterval: cfg.CompactionSleepInterval,
 	}
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
+
+	var storage = &EtcdStorage{srv}
+	srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, address, addresses)
+
 	srv.corruptionChecker = newCorruptionChecker(cfg.Logger, srv, srv.kv.HashStorage())
 
 	srv.authStore = auth.NewAuthStore(srv.Logger(), schema.NewAuthBackend(srv.Logger(), srv.be), tp, int(cfg.BcryptCost))

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 	"strconv"
 	"time"
 
@@ -99,64 +100,75 @@ type Authenticator interface {
 	RoleList(ctx context.Context, r *pb.AuthRoleListRequest) (*pb.AuthRoleListResponse, error)
 }
 
-func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	trace := traceutil.New("range",
-		s.Logger(),
-		traceutil.Field{Key: "range_begin", Value: string(r.Key)},
-		traceutil.Field{Key: "range_end", Value: string(r.RangeEnd)},
-	)
-	ctx = context.WithValue(ctx, traceutil.TraceKey, trace)
+const PINEAPPLE = true
 
-	var resp *pb.RangeResponse
-	var err error
-	defer func(start time.Time) {
-		txn.WarnOfExpensiveReadOnlyRangeRequest(s.Logger(), s.Cfg.WarningApplyDuration, start, r, resp, err)
-		if resp != nil {
-			trace.AddField(
-				traceutil.Field{Key: "response_count", Value: len(resp.Kvs)},
-				traceutil.Field{Key: "response_revision", Value: resp.Header.Revision},
-			)
-		}
-		trace.LogIfLong(traceThreshold)
-	}(time.Now())
-
-	if !r.Serializable {
-		err = s.linearizableReadNotify(ctx)
-		trace.Step("agreement among raft nodes before linearized reading")
-		if err != nil {
-			return nil, err
-		}
-	}
-	chk := func(ai *auth.AuthInfo) error {
-		return s.authStore.IsRangePermitted(ai, r.Key, r.RangeEnd)
-	}
-
-	get := func() { resp, err = txn.Range(ctx, s.Logger(), s.KV(), nil, r) }
-	if serr := s.doSerialize(ctx, chk, get); serr != nil {
-		err = serr
-		return nil, err
-	}
-	return resp, err
+func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
+	panic("Dont transact")
 }
-
-func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
-	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
-	if err != nil {
-		return nil, err
+func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	value, reason := s.pineapple.Write(r.Key, r.Value)
+	if reason != nil {
+		return nil, reason
 	}
-	return resp.(*pb.PutResponse), nil
+	return &pb.PutResponse{
+		Header: nil,
+		PrevKv: &mvccpb.KeyValue{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          value,
+			Lease:          0,
+		},
+	}, nil
 }
-
-func (s *EtcdServer) DeleteRange(ctx context.Context, r *pb.DeleteRangeRequest) (*pb.DeleteRangeResponse, error) {
-	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{DeleteRange: r})
-	if err != nil {
-		return nil, err
+func (s *EtcdServer) PineappleRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	if r.RangeEnd != nil {
+		panic("Range not supported only one key at a time!")
 	}
-	return resp.(*pb.DeleteRangeResponse), nil
+	value, reason := s.pineapple.Read(r.Key)
+	if reason != nil {
+		return nil, reason
+	}
+	var kvs = []*mvccpb.KeyValue{{
+		Key:            r.Key,
+		CreateRevision: 0,
+		ModRevision:    0,
+		Version:        0,
+		Value:          value,
+		Lease:          0,
+	}}
+	return &pb.RangeResponse{
+		Header: &pb.ResponseHeader{},
+		Kvs:    kvs,
+	}, nil
+}
+func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRangeRequest) (*pb.DeleteRangeResponse, error) {
+	if r.RangeEnd != nil {
+		panic("DeleteRange not supported only one key at a time!")
+	}
+	value, reason := s.pineapple.Write(r.Key, make([]byte, 0))
+	if reason != nil {
+		return nil, reason
+	}
+	var kvs = []*mvccpb.KeyValue{{
+		Key:            r.Key,
+		CreateRevision: 0,
+		ModRevision:    0,
+		Version:        0,
+		Value:          value,
+		Lease:          0,
+	}}
+	return &pb.DeleteRangeResponse{
+		Header:  &pb.ResponseHeader{},
+		PrevKvs: kvs,
+	}, nil
 }
 
 func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
+	if PINEAPPLE {
+		return s.PineappleTxn(ctx, r)
+	}
 	if txn.IsTxnReadonly(r) {
 		trace := traceutil.New("transaction",
 			s.Logger(),
@@ -196,6 +208,69 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 		return nil, err
 	}
 	return resp.(*pb.TxnResponse), nil
+}
+func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	if PINEAPPLE {
+		return s.PineapplePut(ctx, r)
+	}
+	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
+	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.PutResponse), nil
+}
+func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	if PINEAPPLE {
+		return s.PineappleRange(ctx, r)
+	}
+	trace := traceutil.New("range",
+		s.Logger(),
+		traceutil.Field{Key: "range_begin", Value: string(r.Key)},
+		traceutil.Field{Key: "range_end", Value: string(r.RangeEnd)},
+	)
+	ctx = context.WithValue(ctx, traceutil.TraceKey, trace)
+
+	var resp *pb.RangeResponse
+	var err error
+	defer func(start time.Time) {
+		txn.WarnOfExpensiveReadOnlyRangeRequest(s.Logger(), s.Cfg.WarningApplyDuration, start, r, resp, err)
+		if resp != nil {
+			trace.AddField(
+				traceutil.Field{Key: "response_count", Value: len(resp.Kvs)},
+				traceutil.Field{Key: "response_revision", Value: resp.Header.Revision},
+			)
+		}
+		trace.LogIfLong(traceThreshold)
+	}(time.Now())
+
+	if !r.Serializable {
+		err = s.linearizableReadNotify(ctx)
+		trace.Step("agreement among raft nodes before linearized reading")
+		if err != nil {
+			return nil, err
+		}
+	}
+	chk := func(ai *auth.AuthInfo) error {
+		return s.authStore.IsRangePermitted(ai, r.Key, r.RangeEnd)
+	}
+
+	get := func() { resp, err = txn.Range(ctx, s.Logger(), s.KV(), nil, r) }
+	if serr := s.doSerialize(ctx, chk, get); serr != nil {
+		err = serr
+		return nil, err
+	}
+	return resp, err
+}
+func (s *EtcdServer) DeleteRange(ctx context.Context, r *pb.DeleteRangeRequest) (*pb.DeleteRangeResponse, error) {
+	if PINEAPPLE {
+		return s.PineappleDeleteRange(ctx, r)
+	}
+	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{DeleteRange: r})
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.DeleteRangeResponse), nil
 }
 
 func (s *EtcdServer) Compact(ctx context.Context, r *pb.CompactionRequest) (*pb.CompactionResponse, error) {

@@ -131,6 +131,8 @@ type KV interface {
 	// Restore restores the KV store from a backend.
 	Restore(b backend.Backend) error
 	Close() error
+
+	Index() index
 }
 
 // WatchableKV is a KV that can be watched.
