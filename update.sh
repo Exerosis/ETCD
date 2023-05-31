@@ -3,6 +3,8 @@ cd ../Raft || exit
 git stash && git stash clear && git pull
 cd ../RabiaGo || exit
 git stash && git stash clear && git pull
+cd ../PineappleGo || exit
+git stash && git stash clear && git pull
 cd ../ETCD || exit
 git stash && git stash clear && git pull
 
