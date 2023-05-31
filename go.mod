@@ -3,9 +3,9 @@ module go.etcd.io/etcd/v3
 go 1.19
 
 replace (
+	github.com/exerosis/PineappleGo => ../PineappleGo
 	github.com/exerosis/RabiaGo => ../RabiaGo
 	github.com/exerosis/raft => ../Raft
-	github.com/exerosis/PineappleGo => ../PineappleGo
 	go.etcd.io/etcd/api/v3 => ./api
 	go.etcd.io/etcd/client/pkg/v3 => ./client/pkg
 	go.etcd.io/etcd/client/v2 => ./client/v2
@@ -42,7 +42,6 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.110.0 // indirect
 	github.com/BertoldVdb/go-misc v0.1.8 // indirect
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
@@ -99,9 +98,9 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230327152035-dc694ad2151e // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
