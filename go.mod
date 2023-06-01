@@ -13,7 +13,7 @@ replace (
 	go.etcd.io/etcd/etcdctl/v3 => ./etcdctl
 	go.etcd.io/etcd/etcdutl/v3 => ./etcdutl
 	go.etcd.io/etcd/pkg/v3 => ./pkg
-	go.etcd.io/etcd/server/v3 => ./server
+	//go.etcd.io/etcd/server/v3 => ./server
 	go.etcd.io/etcd/tests/v3 => ./tests
 )
 
