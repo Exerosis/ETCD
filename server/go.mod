@@ -81,6 +81,7 @@ require (
 )
 
 replace (
+	github.com/exerosis/PineappleGo => ../../PineappleGo
 	github.com/exerosis/RabiaGo => ../../RabiaGo
 	github.com/exerosis/raft => ../../Raft
 	go.etcd.io/etcd/api/v3 => ../api
