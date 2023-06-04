@@ -111,7 +111,7 @@ func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.Pu
 		return nil, reason
 	}
 	return &pb.PutResponse{
-		Header: nil,
+		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
 			Key:            r.Key,
 			CreateRevision: 0,
