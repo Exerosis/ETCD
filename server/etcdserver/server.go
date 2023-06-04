@@ -382,6 +382,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		"192.168.1.2:2000",
 		"192.168.1.3:2000",
 	}
+	var local = fmt.Sprintf("%s:%d", address, 2000)
 	heartbeat := time.Duration(cfg.TickMs) * time.Millisecond
 	srv = &EtcdServer{
 		readych:               make(chan struct{}),
@@ -440,7 +441,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	var storage = &EtcdStorage{srv}
-	srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, address, addresses)
+	srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 	go func() {
 		reason := srv.pineapple.Run()
 		if reason != nil {
