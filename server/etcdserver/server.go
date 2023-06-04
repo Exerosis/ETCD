@@ -314,6 +314,9 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	if err != nil {
 		panic(err)
 	}
+	if len(result.KVs) == 0 {
+		return 0, make([]byte, 0)
+	}
 	var bytes = result.KVs[0].Value
 	var revision = binary.LittleEndian.Uint64(bytes)
 	return revision, bytes[8:]
