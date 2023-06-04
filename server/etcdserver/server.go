@@ -441,6 +441,18 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	var storage = &EtcdStorage{srv}
 	srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, address, addresses)
+	go func() {
+		reason := srv.pineapple.Run()
+		if reason != nil {
+			panic(reason)
+		}
+	}()
+
+	reason = srv.pineapple.Connect()
+	if reason != nil {
+		panic(reason)
+	}
+	println("Connected")
 
 	srv.corruptionChecker = newCorruptionChecker(cfg.Logger, srv, srv.kv.HashStorage())
 
