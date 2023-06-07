@@ -100,7 +100,7 @@ type Authenticator interface {
 	RoleList(ctx context.Context, r *pb.AuthRoleListRequest) (*pb.AuthRoleListResponse, error)
 }
 
-const PINEAPPLE = true
+const PINEAPPLE = false
 
 func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
 	panic("Dont transact")
