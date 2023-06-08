@@ -1,5 +1,8 @@
 #!/bin/bash
+HOST_1="http://192.168.1.1:2379"
+HOST_2="http://192.168.1.2:2379"
+HOST_3="http://192.168.1.3:2379"
 go run ./tools/benchmark \
---endpoints=http://192.168.1.1:2379,http://192.168.1.2:2379,http://192.168.1.3:2379 \
---conns=1000 --clients=2000 put --key-size=8 --total=100000 --val-size=256
-#--sequential-keyssadf
+--endpoints=${HOST_1},${HOST_2},${HOST_3} --conns=100 --clients=1000 \
+    range YOUR_KEY --consistency=l --total=100000
+#--sequential-keys
