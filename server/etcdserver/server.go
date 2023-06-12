@@ -209,6 +209,8 @@ type Server interface {
 	LeaderChangedNotify() <-chan struct{}
 }
 
+const PINEAPPLE = false
+
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
 	// inflightSnapshots holds count the number of snapshots currently inflight.
@@ -443,20 +445,22 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	}
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
-	var storage = &EtcdStorage{srv}
-	srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
-	go func() {
-		reason := srv.pineapple.Run()
+	if PINEAPPLE {
+		var storage = &EtcdStorage{srv}
+		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
+		go func() {
+			reason := srv.pineapple.Run()
+			if reason != nil {
+				panic(reason)
+			}
+		}()
+
+		reason = srv.pineapple.Connect()
 		if reason != nil {
 			panic(reason)
 		}
-	}()
-
-	reason = srv.pineapple.Connect()
-	if reason != nil {
-		panic(reason)
+		println("Connected")
 	}
-	println("Connected")
 
 	srv.corruptionChecker = newCorruptionChecker(cfg.Logger, srv, srv.kv.HashStorage())
 
