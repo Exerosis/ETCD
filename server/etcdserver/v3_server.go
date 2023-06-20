@@ -129,7 +129,7 @@ func (s *EtcdServer) PineappleRange(ctx context.Context, r *pb.RangeRequest) (*p
 	var length = rand.Intn(100)
 	var random = make([]byte, length)
 	rand.Read(random)
-	value, reason := s.pineapple.Read(random)
+	value, reason := s.pineapple.Read(r.Key)
 	if reason != nil {
 		return nil, reason
 	}
