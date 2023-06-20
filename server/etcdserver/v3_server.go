@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -126,9 +125,9 @@ func (s *EtcdServer) PineappleRange(ctx context.Context, r *pb.RangeRequest) (*p
 	if r.RangeEnd != nil {
 		panic("Range not supported only one key at a time!")
 	}
-	var length = rand.Intn(100)
-	var random = make([]byte, length)
-	rand.Read(random)
+	//var length = rand.Intn(100)
+	//var random = make([]byte, length)
+	//rand.Read(random)
 	value, reason := s.pineapple.Read(r.Key)
 	if reason != nil {
 		return nil, reason
