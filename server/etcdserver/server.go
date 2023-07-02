@@ -209,7 +209,7 @@ type Server interface {
 	LeaderChangedNotify() <-chan struct{}
 }
 
-const PINEAPPLE = false
+const PINEAPPLE = true
 
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
