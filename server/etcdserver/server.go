@@ -456,7 +456,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	if PINEAPPLE {
-		println("PINEAPPLE ENABLED")k
+		println("PINEAPPLE ENABLED")
 		var storage = &EtcdStorage{srv}
 		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 		go func() {
