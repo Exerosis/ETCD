@@ -456,6 +456,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	if PINEAPPLE {
+		println("PINEAPPLE ENABLED")k
 		var storage = &EtcdStorage{srv}
 		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 		go func() {
@@ -470,6 +471,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(reason)
 		}
 		println("Connected")
+	} else {
+		println("RAFT ENABLED")
 	}
 
 	srv.corruptionChecker = newCorruptionChecker(cfg.Logger, srv, srv.kv.HashStorage())
