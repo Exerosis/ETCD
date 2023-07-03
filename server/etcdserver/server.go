@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -209,7 +210,16 @@ type Server interface {
 	LeaderChangedNotify() <-chan struct{}
 }
 
-const PINEAPPLE = true
+func LoadPineapple() bool {
+	s := os.Getenv("PINEAPPLE")
+	i, err := strconv.ParseBool(s)
+	if nil != err {
+		return false
+	}
+	return i
+}
+
+var PINEAPPLE = LoadPineapple()
 
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {

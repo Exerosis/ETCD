@@ -20,6 +20,12 @@ elif [ $HOST = "node-3" ]; then
 fi
 echo "Local IP: $IP"
 
+if [ "$1" = "raft" ]; then
+  export PINEAPPLE="false"
+else
+  export PINEAPPLE="true"
+fi
+
 sudo rm -rf "$HOST.etcd"
 make build
 sudo ./bin/etcd --log-level panic \
