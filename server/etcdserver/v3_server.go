@@ -105,10 +105,10 @@ func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.Tx
 }
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Pineapple Put: ", r.Key)
-	//reason := s.pineapple.Write(r.Key, r.Value)
-	//if reason != nil {
-	//	return nil, reason
-	//}
+	reason := s.pineapple.Write(r.Key, r.Value)
+	if reason != nil {
+		return nil, reason
+	}
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
@@ -128,11 +128,10 @@ func (s *EtcdServer) PineappleRange(ctx context.Context, r *pb.RangeRequest) (*p
 	//var length = rand.Intn(100)
 	//var random = make([]byte, length)
 	//rand.Read(random)
-	//value, reason := s.pineapple.Read(r.Key)
-	//if reason != nil {
-	//	return nil, reason
-	//}
-	var value = make([]byte, 0)
+	value, reason := s.pineapple.Read(r.Key)
+	if reason != nil {
+		return nil, reason
+	}
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,

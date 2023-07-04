@@ -463,11 +463,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	if PINEAPPLE {
 		println("PINEAPPLE ENABLED")
-		var storage = &EtcdStorage{
-			etcd: srv,
-			lock: sync.RWMutex{},
-			tags: make(map[string]pineapple.Tag),
-		}
+		//var storage = &EtcdStorage{
+		//	etcd: srv,
+		//	lock: sync.RWMutex{},
+		//	tags: make(map[string]pineapple.Tag),
+		//}
+		var storage = pineapple.NewStorage()
 		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 		go func() {
 			reason := srv.pineapple.Run()
