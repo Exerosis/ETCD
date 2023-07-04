@@ -16,7 +16,6 @@ package etcdserver
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -318,6 +317,8 @@ type EtcdServer struct {
 
 type EtcdStorage struct {
 	etcd *EtcdServer
+	lock sync.RWMutex
+	tags map[string]pineapple.Tag
 }
 
 func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
@@ -329,24 +330,29 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	if len(result.KVs) == 0 {
 		return 0, make([]byte, 0)
 	}
-	var bytes = result.KVs[0].Value
-	var revision = binary.LittleEndian.Uint64(bytes)
-	return revision, bytes[8:]
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.tags[string(key)], result.KVs[0].Value
 }
 
 func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
-	tag, _ := e.Get(key)
-	return tag
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.tags[string(key)]
 }
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	if len(value) == 0 {
 		e.etcd.kv.DeleteRange(key, nil)
+		e.lock.Lock()
+		defer e.lock.Unlock()
+		delete(e.tags, string(key))
 		return
 	}
-	var bytes = make([]byte, 8)
-	binary.LittleEndian.PutUint64(bytes, tag)
-	e.etcd.kv.Put(key, append(bytes, value...), 0)
+	e.etcd.kv.Put(key, value, 0)
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	e.tags[string(key)] = tag
 }
 
 // NewServer creates a new EtcdServer from the supplied configuration. The
@@ -457,7 +463,11 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	if PINEAPPLE {
 		println("PINEAPPLE ENABLED")
-		var storage = &EtcdStorage{srv}
+		var storage = &EtcdStorage{
+			etcd: srv,
+			lock: sync.RWMutex{},
+			tags: make(map[string]pineapple.Tag),
+		}
 		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 		go func() {
 			reason := srv.pineapple.Run()

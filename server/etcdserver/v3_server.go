@@ -105,7 +105,7 @@ func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.Tx
 }
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Pineapple Put: ", r.Key)
-	value, reason := s.pineapple.Write(r.Key, r.Value)
+	reason := s.pineapple.Write(r.Key, r.Value)
 	if reason != nil {
 		return nil, reason
 	}
@@ -116,7 +116,7 @@ func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.Pu
 			CreateRevision: 0,
 			ModRevision:    0,
 			Version:        0,
-			Value:          value,
+			Value:          make([]byte, 0),
 			Lease:          0,
 		},
 	}, nil
@@ -149,7 +149,7 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	if r.RangeEnd != nil {
 		panic("DeleteRange not supported only one key at a time!")
 	}
-	value, reason := s.pineapple.Write(r.Key, make([]byte, 0))
+	reason := s.pineapple.Write(r.Key, make([]byte, 0))
 	if reason != nil {
 		return nil, reason
 	}
@@ -158,7 +158,7 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          value,
+		Value:          make([]byte, 0),
 		Lease:          0,
 	}}
 	return &pb.DeleteRangeResponse{
