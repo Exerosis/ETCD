@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"strconv"
 	"time"
@@ -105,7 +104,7 @@ func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.Tx
 	panic("Dont transact")
 }
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	fmt.Println("Pineapple Put: ", r.Key)
+	//fmt.Println("Pineapple Put: ", r.Key)
 	value, reason := s.pineapple.Write(r.Key, r.Value)
 	if reason != nil {
 		return nil, reason
