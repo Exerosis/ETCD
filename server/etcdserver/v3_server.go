@@ -104,7 +104,7 @@ func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.Tx
 	panic("Dont transact")
 }
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	println("Pineapple Put: ", len(r.Key))
+	println("Pineapple Put: ", binary.LittleEndian.Uint64(r.Key))
 	value, reason := s.pineapple.Write(r.Key, r.Value)
 	if reason != nil {
 		return nil, reason
