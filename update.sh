@@ -26,6 +26,12 @@ else
   export PINEAPPLE="true"
 fi
 
+if [ "$1" = "memory" ]; then
+  export PINEAPPLE_MEMORY="true"
+else
+  export PINEAPPLE_MEMORY="false"
+fi
+
 sudo rm -rf "$HOST.etcd"
 make build
 sudo ./bin/etcd --log-level panic \

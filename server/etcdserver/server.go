@@ -34,7 +34,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -209,8 +209,8 @@ type Server interface {
 	LeaderChangedNotify() <-chan struct{}
 }
 
-func LoadPineapple() bool {
-	s := os.Getenv("PINEAPPLE")
+func LoadEnv(name string) bool {
+	s := os.Getenv(name)
 	i, err := strconv.ParseBool(s)
 	if nil != err {
 		return false
@@ -218,7 +218,8 @@ func LoadPineapple() bool {
 	return i
 }
 
-var PINEAPPLE = LoadPineapple()
+var PINEAPPLE = LoadEnv("PINEAPPLE")
+var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
@@ -322,33 +323,38 @@ type EtcdStorage struct {
 }
 
 func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
+	e.lock.RLock()
+	tag, present := e.tags[string(key)]
+	e.lock.RUnlock()
+	if !present {
+		return pineapple.NONE, nil
+	}
 	var options = mvcc.RangeOptions{}
 	result, err := e.etcd.kv.Range(context.Background(), key, nil, options)
 	if err != nil {
 		panic(err)
 	}
-	if len(result.KVs) == 0 {
-		return 0, make([]byte, 0)
+	if len(result.KVs) != 1 {
+		panic("We have a tag for data that ETCD isn't storing!")
 	}
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-	return e.tags[string(key)], result.KVs[0].Value
+	return tag, result.KVs[0].Value
 }
 
 func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	return e.tags[string(key)]
+	tag, present := e.tags[string(key)]
+	if present {
+		return tag
+	}
+	if tag != pineapple.NONE {
+		panic("can't optimize that way")
+	}
+	return pineapple.NONE
 }
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
-	if len(value) == 0 {
-		e.etcd.kv.DeleteRange(key, nil)
-		e.lock.Lock()
-		defer e.lock.Unlock()
-		delete(e.tags, string(key))
-		return
-	}
+	//TODO carefully consider how the write after read effects things here.
 	e.etcd.kv.Put(key, value, 0)
 	e.lock.Lock()
 	defer e.lock.Unlock()
@@ -463,12 +469,16 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	if PINEAPPLE {
 		println("PINEAPPLE ENABLED")
-		//var storage = &EtcdStorage{
-		//	etcd: srv,
-		//	lock: sync.RWMutex{},
-		//	tags: make(map[string]pineapple.Tag),
-		//}
-		var storage = pineapple.NewStorage()
+		var storage pineapple.Storage
+		if MEMORY {
+			storage = pineapple.NewStorage()
+		} else {
+			storage = &EtcdStorage{
+				etcd: srv,
+				lock: sync.RWMutex{},
+				tags: make(map[string]pineapple.Tag),
+			}
+		}
 		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
 		go func() {
 			reason := srv.pineapple.Run()
