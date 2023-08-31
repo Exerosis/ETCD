@@ -15,6 +15,7 @@
 package etcdserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"expvar"
@@ -232,7 +233,7 @@ type EtcdServer struct {
 
 	consistIndex cindex.ConsistentIndexer // consistIndex is used to get/set/save consistentIndex
 	r            raftNode                 // uses 64-bit atomics; keep 64-bit aligned.
-	pineapple    pineapple.Node[pineapple.Cas]
+	pineapple    pineapple.Node[EtcdCas]
 	readych      chan struct{}
 	Cfg          config.ServerConfig
 
@@ -314,6 +315,61 @@ type EtcdServer struct {
 	// Should only be set within apply code path. Used to force snapshot after cluster version downgrade.
 	forceSnapshot     bool
 	corruptionChecker CorruptionChecker
+}
+
+type EtcdCas struct {
+	request *pb.TxnRequest
+}
+
+func (e EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
+	switch compare.Target {
+	case pb.Compare_VALUE:
+		var v []byte
+		if tv, _ := compare.TargetUnion.(*pb.Compare_Value); tv != nil {
+			v = tv.Value
+		}
+		var result = bytes.Compare(value, v)
+		switch compare.Result {
+		case pb.Compare_EQUAL:
+			if result != 0 {
+				return false
+			}
+		case pb.Compare_NOT_EQUAL:
+			if result == 0 {
+				return false
+			}
+		case pb.Compare_GREATER:
+			if result <= 0 {
+				return false
+			}
+		case pb.Compare_LESS:
+			if result >= 0 {
+				return false
+			}
+		}
+	default:
+		return false
+	}
+	return true
+}
+
+func (e EtcdCas) Modify(value []byte) []byte {
+	if !e.checkCompares(e.request.Compare[0], value) {
+		if put, ok := e.request.Failure[0].Request.(*pb.RequestOp_RequestPut); ok {
+			return put.RequestPut.Value
+		}
+	} else {
+		if put, ok := e.request.Success[0].Request.(*pb.RequestOp_RequestPut); ok {
+			return put.RequestPut.Value
+		}
+	}
+	return value
+}
+func (e EtcdCas) Marshal() ([]byte, error) {
+	return e.request.Marshal()
+}
+func (e EtcdCas) Unmarshal(bytes []byte) error {
+	return e.request.Unmarshal(bytes)
 }
 
 type EtcdStorage struct {
@@ -479,7 +535,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				tags: make(map[string]pineapple.Tag),
 			}
 		}
-		srv.pineapple = pineapple.NewNode[pineapple.Cas](storage, local, addresses)
+		srv.pineapple = pineapple.NewNode[EtcdCas](storage, local, addresses)
 		go func() {
 			reason := srv.pineapple.Run()
 			if reason != nil {

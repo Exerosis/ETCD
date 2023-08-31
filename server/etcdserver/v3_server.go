@@ -101,7 +101,15 @@ type Authenticator interface {
 }
 
 func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
-	panic("Dont transact")
+	err := s.pineapple.ReadModifyWrite(r.Compare[0].Key, EtcdCas{r})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.TxnResponse{
+		Header:    &pb.ResponseHeader{},
+		Succeeded: true,
+		Responses: make([]*pb.ResponseOp, 0),
+	}, nil
 }
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Pineapple Put: ", r.Key)
