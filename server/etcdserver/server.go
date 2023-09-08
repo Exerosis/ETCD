@@ -354,6 +354,7 @@ func (e EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
 }
 
 func (e EtcdCas) Modify(value []byte) []byte {
+	println("Here we are doing the comapres pog")
 	if !e.checkCompares(e.request.Compare[0], value) {
 		if put, ok := e.request.Failure[0].Request.(*pb.RequestOp_RequestPut); ok {
 			return put.RequestPut.Value
