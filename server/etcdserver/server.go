@@ -370,6 +370,7 @@ func (e EtcdCas) Marshal() ([]byte, error) {
 }
 func (e EtcdCas) Unmarshal(bytes []byte) error {
 	e.request = &pb.TxnRequest{}
+	fmt.Printf("Request: %s", e.request)
 	return e.request.Unmarshal(bytes)
 }
 
