@@ -366,7 +366,14 @@ func (e EtcdCas) Modify(value []byte) []byte {
 	return value
 }
 func (e EtcdCas) Marshal() ([]byte, error) {
-	return e.request.Marshal()
+	things, err := e.request.Marshal()
+	var test = &pb.TxnRequest{}
+	err = test.Unmarshal(things)
+	if err != nil {
+		panic(err)
+	}
+	println(test)
+	return things, err
 }
 func (e EtcdCas) Unmarshal(bytes []byte) error {
 	e.request = &pb.TxnRequest{}
