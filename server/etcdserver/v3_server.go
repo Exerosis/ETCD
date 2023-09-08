@@ -101,7 +101,7 @@ type Authenticator interface {
 }
 
 func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
-	err := s.pineapple.ReadModifyWrite(r.Compare[0].Key, EtcdCas{r})
+	err := s.pineapple.ReadModifyWrite(r.Compare[0].Key, EtcdCas{*r})
 	if err != nil {
 		return nil, err
 	}
