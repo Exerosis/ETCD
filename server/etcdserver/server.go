@@ -371,9 +371,14 @@ func (e EtcdCas) Marshal() ([]byte, error) {
 	return things, err
 }
 func (e EtcdCas) Unmarshal(bytes []byte) error {
+	fmt.Printf("Is now: %s", bytes)
 	e.request = &pb.TxnRequest{}
+
 	fmt.Printf("Request: %s", e.request)
-	return e.request.Unmarshal(bytes)
+	var err = e.request.Unmarshal(bytes)
+	things, err := e.request.Marshal()
+	fmt.Printf("thing came to: %s", things)
+	return err
 }
 
 type EtcdStorage struct {
