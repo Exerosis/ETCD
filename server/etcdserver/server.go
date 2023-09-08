@@ -318,7 +318,7 @@ type EtcdServer struct {
 }
 
 type EtcdCas struct {
-	request *pb.TxnRequest
+	request pb.TxnRequest
 }
 
 func (e EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
@@ -366,19 +366,10 @@ func (e EtcdCas) Modify(value []byte) []byte {
 	return value
 }
 func (e EtcdCas) Marshal() ([]byte, error) {
-	things, err := e.request.Marshal()
-	fmt.Printf("Went to: %s", things)
-	return things, err
+	return e.request.Marshal()
 }
 func (e EtcdCas) Unmarshal(bytes []byte) error {
-	fmt.Printf("Is now: %s", bytes)
-	e.request = &pb.TxnRequest{}
-
-	fmt.Printf("Request: %s", e.request)
-	var err = e.request.Unmarshal(bytes)
-	things, err := e.request.Marshal()
-	fmt.Printf("thing came to: %s", things)
-	return err
+	return e.request.Unmarshal(bytes)
 }
 
 type EtcdStorage struct {
