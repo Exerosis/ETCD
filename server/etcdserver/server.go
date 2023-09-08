@@ -372,7 +372,8 @@ func (e EtcdCas) Marshal() ([]byte, error) {
 	if err != nil {
 		panic(err)
 	}
-	println(test)
+	whatever, err := test.Marshal()
+	println(bytes.Equal(things, whatever))
 	return things, err
 }
 func (e EtcdCas) Unmarshal(bytes []byte) error {
