@@ -527,7 +527,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	if PINEAPPLE {
-		println("PINEAPPLE ENABLED")
+		println("PINEAPPLE ENABLED (test mode)")
 		var storage pineapple.Storage
 		if MEMORY {
 			storage = pineapple.NewStorage()
