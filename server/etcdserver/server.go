@@ -233,7 +233,7 @@ type EtcdServer struct {
 
 	consistIndex cindex.ConsistentIndexer // consistIndex is used to get/set/save consistentIndex
 	r            raftNode                 // uses 64-bit atomics; keep 64-bit aligned.
-	pineapple    pineapple.Node[EtcdCas]
+	pineapple    pineapple.Node[*EtcdCas]
 	readych      chan struct{}
 	Cfg          config.ServerConfig
 
@@ -318,10 +318,10 @@ type EtcdServer struct {
 }
 
 type EtcdCas struct {
-	request *pb.TxnRequest
+	request pb.TxnRequest
 }
 
-func (e EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
+func (e *EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
 	switch compare.Target {
 	case pb.Compare_VALUE:
 		var v []byte
@@ -353,7 +353,7 @@ func (e EtcdCas) checkCompares(compare *pb.Compare, value []byte) bool {
 	return true
 }
 
-func (e EtcdCas) Modify(value []byte) []byte {
+func (e *EtcdCas) Modify(value []byte) []byte {
 	if !e.checkCompares(e.request.Compare[0], value) {
 		if put, ok := e.request.Failure[0].Request.(*pb.RequestOp_RequestPut); ok {
 			return put.RequestPut.Value
@@ -365,10 +365,10 @@ func (e EtcdCas) Modify(value []byte) []byte {
 	}
 	return value
 }
-func (e EtcdCas) Marshal() ([]byte, error) {
+func (e *EtcdCas) Marshal() ([]byte, error) {
 	return e.request.Marshal()
 }
-func (e EtcdCas) Unmarshal(bytes []byte) error {
+func (e *EtcdCas) Unmarshal(bytes []byte) error {
 	return e.request.Unmarshal(bytes)
 }
 
@@ -538,7 +538,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				tags: make(map[string]pineapple.Tag),
 			}
 		}
-		srv.pineapple = pineapple.NewNode[EtcdCas](storage, local, addresses)
+		var factory = func() *EtcdCas { return &EtcdCas{} }
+		srv.pineapple = pineapple.NewNode(storage, local, addresses, factory)
 		go func() {
 			reason := srv.pineapple.Run()
 			if reason != nil {
