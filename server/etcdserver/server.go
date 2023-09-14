@@ -390,14 +390,14 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	trace := traceutil.Get(context.Background())
 	var read = e.etcd.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	result, err := read.Range(context.Background(), key, nil, options)
+	_, err := read.Range(context.Background(), key, nil, options)
 	if err != nil {
 		panic(err)
 	}
 	//if len(result.KVs) != 1 {
 	//	panic("We have a tag for data that ETCD isn't storing!")
 	//}
-	return tag, result.KVs[0].Value
+	return e.storage.Get(key)
 }
 
 func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
