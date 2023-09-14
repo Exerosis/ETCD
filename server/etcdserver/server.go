@@ -373,9 +373,10 @@ func (e *EtcdCas) Unmarshal(bytes []byte) error {
 }
 
 type EtcdStorage struct {
-	etcd *EtcdServer
-	lock sync.RWMutex
-	tags map[string]pineapple.Tag
+	etcd    *EtcdServer
+	lock    sync.RWMutex
+	tags    map[string]pineapple.Tag
+	storage pineapple.Storage
 }
 
 func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
@@ -396,7 +397,7 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	//if len(result.KVs) != 1 {
 	//	panic("We have a tag for data that ETCD isn't storing!")
 	//}
-	return tag, make([]byte, 0)
+	return e.storage.Get(key)
 }
 
 func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
@@ -414,7 +415,8 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	//TODO carefully consider how the write after read effects things here.
-	e.etcd.kv.Put(key, value, 0)
+	//e.etcd.kv.Put(key, value, 0)
+	e.storage.Set(key, tag, value)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.tags[string(key)] = tag
