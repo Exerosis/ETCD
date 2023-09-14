@@ -415,7 +415,7 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	//TODO carefully consider how the write after read effects things here.
-	//e.etcd.kv.Put(key, value, 0)
+	e.etcd.kv.Put(key, value, 0)
 	e.storage.Set(key, tag, value)
 	e.lock.Lock()
 	defer e.lock.Unlock()
