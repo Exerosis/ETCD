@@ -415,8 +415,10 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	//TODO carefully consider how the write after read effects things here.
-	e.etcd.kv.Put(key, value, 0)
-	e.storage.Set(key, tag, value)
+	trace := traceutil.Get(context.Background())
+	var write = e.etcd.KV().Write(trace)
+	defer write.End()
+	write.Put(key, value, 0)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.tags[string(key)] = tag
