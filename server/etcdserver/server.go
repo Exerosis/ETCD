@@ -535,9 +535,10 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			storage = pineapple.NewStorage()
 		} else {
 			storage = &EtcdStorage{
-				etcd: srv,
-				lock: sync.RWMutex{},
-				tags: make(map[string]pineapple.Tag),
+				etcd:    srv,
+				lock:    sync.RWMutex{},
+				tags:    make(map[string]pineapple.Tag),
+				storage: pineapple.NewStorage(),
 			}
 		}
 		var factory = func() *EtcdCas { return &EtcdCas{} }
