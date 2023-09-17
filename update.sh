@@ -22,6 +22,7 @@ echo "Local IP: $IP"
 
 if [ "$1" = "raft" ]; then
   export PINEAPPLE="false"
+  export SETUP="--initial-cluster node-1=http://192.168.1.1:12380,node-2=http://192.168.1.2:12380,node-3=http://192.168.1.3:12380"
 else
   export PINEAPPLE="true"
 fi
@@ -41,7 +42,7 @@ sudo ./bin/etcd --log-level panic \
 --advertise-client-urls http://"$IP":2379 \
 --initial-advertise-peer-urls http://"$IP":12380 \
 --listen-peer-urls http://"$IP":12380 \
---initial-cluster node-1=http://192.168.1.1:12380,node-2=http://192.168.1.2:12380,node-3=http://192.168.1.3:12380 \
+$SETUP \
 --initial-cluster-state new
 
 

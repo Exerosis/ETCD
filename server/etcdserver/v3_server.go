@@ -223,6 +223,9 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	if PINEAPPLE {
 		return s.PineapplePut(ctx, r)
 	}
+	return s.RaftPut(ctx, r)
+}
+func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
 	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
 	if err != nil {
@@ -234,6 +237,9 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	if PINEAPPLE {
 		return s.PineappleRange(ctx, r)
 	}
+	return s.RaftRange(ctx, r)
+}
+func (s *EtcdServer) RaftRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	trace := traceutil.New("range",
 		s.Logger(),
 		traceutil.Field{Key: "range_begin", Value: string(r.Key)},
