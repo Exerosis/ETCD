@@ -386,26 +386,26 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	if !present {
 		return pineapple.NONE, nil
 	}
-	response, err := e.etcd.RaftRange(context.Background(), &pb.RangeRequest{Key: key})
-	if err != nil {
-		return pineapple.NONE, nil
-	}
-	if len(response.Kvs) <= 0 {
-		return pineapple.NONE, nil
-	}
-	return tag, response.Kvs[0].Value
-	//var options = mvcc.RangeOptions{}
-	//trace := traceutil.Get(context.Background())
-	//var read = e.etcd.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	//defer read.End()
-	//_, err := read.Range(context.Background(), key, nil, options)
+	//response, err := e.etcd.RaftRange(context.Background(), &pb.RangeRequest{Key: key})
 	//if err != nil {
-	//	panic(err)
+	//	return pineapple.NONE, nil
 	//}
-	////if len(result.KVs) != 1 {
-	////	panic("We have a tag for data that ETCD isn't storing!")
-	////}
-	//return e.storage.Get(key)
+	//if len(response.Kvs) <= 0 {
+	//	return pineapple.NONE, nil
+	//}
+	//return tag, response.Kvs[0].Value
+	var options = mvcc.RangeOptions{}
+	trace := traceutil.Get(context.Background())
+	var read = e.etcd.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	defer read.End()
+	_, err := read.Range(context.Background(), key, nil, options)
+	if err != nil {
+		panic(err)
+	}
+	//if len(result.KVs) != 1 {
+	//	panic("We have a tag for data that ETCD isn't storing!")
+	//}
+	return e.storage.Get(key)
 }
 
 func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
@@ -423,14 +423,14 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	////TODO carefully consider how the write after read effects things here.
-	//trace := traceutil.Get(context.Background())
-	//var write = e.etcd.KV().Write(trace)
-	//defer write.End()
-	//write.Put(key, value, 0)
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
-	_, _ = e.etcd.RaftPut(context.Background(), &pb.PutRequest{Key: key, Value: value})
+	trace := traceutil.Get(context.Background())
+	var write = e.etcd.KV().Write(trace)
+	defer write.End()
+	write.Put(key, value, 0)
+	//_, _ = e.etcd.RaftPut(context.Background(), &pb.PutRequest{Key: key, Value: value})
 }
 
 // NewServer creates a new EtcdServer from the supplied configuration. The
