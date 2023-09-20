@@ -373,10 +373,11 @@ func (e *EtcdCas) Unmarshal(bytes []byte) error {
 }
 
 type EtcdStorage struct {
-	etcd    *EtcdServer
-	lock    sync.RWMutex
-	tags    map[string]pineapple.Tag
-	storage pineapple.Storage
+	etcd     *EtcdServer
+	revision int64
+	lock     sync.RWMutex
+	tags     map[string]pineapple.Tag
+	storage  pineapple.Storage
 }
 
 func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
@@ -386,6 +387,7 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	if !present {
 		return pineapple.NONE, nil
 	}
+	//e.etcd.kv.Index().Put()
 	//response, err := e.etcd.RaftRange(context.Background(), &pb.RangeRequest{Key: key})
 	//if err != nil {
 	//	return pineapple.NONE, nil
