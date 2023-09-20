@@ -380,6 +380,8 @@ type EtcdStorage struct {
 	storage  pineapple.Storage
 }
 
+var options = mvcc.RangeOptions{}
+
 func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	e.lock.RLock()
 	tag, present := e.tags[string(key)]
@@ -387,20 +389,7 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	if !present {
 		return pineapple.NONE, nil
 	}
-	//e.etcd.kv.Index().Put()
-	//response, err := e.etcd.RaftRange(context.Background(), &pb.RangeRequest{Key: key})
-	//if err != nil {
-	//	return pineapple.NONE, nil
-	//}
-	//if len(response.Kvs) <= 0 {
-	//	return pineapple.NONE, nil
-	//}
-	//return tag, response.Kvs[0].Value
-	var options = mvcc.RangeOptions{}
-	trace := traceutil.Get(context.Background())
-	var read = e.etcd.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	defer read.End()
-	result, err := read.Range(context.Background(), key, nil, options)
+	result, err := e.etcd.KV().Range(context.Background(), key, nil, options)
 	if err != nil {
 		panic(err)
 	}
