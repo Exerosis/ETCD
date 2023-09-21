@@ -391,7 +391,7 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	trace := traceutil.Get(context.Background())
 	var read = e.etcd.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	result, err := e.etcd.KV().Range(context.Background(), key, nil, options)
+	result, err := read.Range(context.Background(), key, nil, options)
 	if err != nil {
 		panic(err)
 	}
