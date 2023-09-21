@@ -476,7 +476,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		"192.168.1.4:2000",
 	}
 	var local = fmt.Sprintf("%s:%d", address, 2000)
-	heartbeat := time.Duration(cfg.TickMs) * time.Millisecond
+	heartbeat := time.Duration(100_000) * time.Millisecond
 	srv = &EtcdServer{
 		readych:               make(chan struct{}),
 		Cfg:                   cfg,
