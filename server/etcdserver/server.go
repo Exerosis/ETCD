@@ -1299,6 +1299,7 @@ func (s *EtcdServer) applyEntries(ep *etcdProgress, apply *toApply) {
 		return
 	}
 	firsti := apply.entries[0].Index
+
 	if firsti > ep.appliedi+1 {
 		lg := s.Logger()
 		lg.Panic(
