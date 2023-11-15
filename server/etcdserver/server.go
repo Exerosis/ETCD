@@ -385,6 +385,7 @@ func (e *EtcdStorage) Get(key []byte) (tag pineapple.Tag, value []byte) {
 	tag, present := e.tags[string(key)]
 	e.lock.RUnlock()
 	if !present {
+		print("Cheated")
 		return pineapple.NONE, nil
 	}
 	var options = mvcc.RangeOptions{}
@@ -406,6 +407,7 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 	defer e.lock.RUnlock()
 	tag, present := e.tags[string(key)]
 	if present {
+		print("Cheated")
 		return tag
 	}
 	if tag != pineapple.NONE {
