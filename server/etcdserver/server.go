@@ -418,14 +418,11 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	////TODO carefully consider how the write after read effects things here.
-	trace := traceutil.Get(context.Background())
-	var write = e.etcd.KV().Write(trace)
-	defer write.End()
-	write.Put(key, value, 0)
+	_, _ = e.etcd.RaftPut(context.Background(), &pb.PutRequest{Key: key, Value: value})
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
-	//_, _ = e.etcd.RaftPut(context.Background(), &pb.PutRequest{Key: key, Value: value})
+
 }
 
 // NewServer creates a new EtcdServer from the supplied configuration. The
