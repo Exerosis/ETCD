@@ -407,7 +407,7 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 	defer e.lock.RUnlock()
 	tag, present := e.tags[string(key)]
 	if present {
-		print("Cheated")
+		//print("Cheated")
 		return tag
 	}
 	if tag != pineapple.NONE {
