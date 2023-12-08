@@ -416,17 +416,20 @@ func (e *EtcdStorage) Peek(key []byte) pineapple.Tag {
 	return pineapple.NONE
 }
 
+// the storage itself is used by t he pineapple library to store key value pairs and their tags
+// so this gets called at various times, set gets called by every node on every read and write
+// peek gets called by every node on every write and read on every read
+// set gets called on reads because the read cannot be complete until you broadcast the tag you just read to all
+// this ensure that any reads following it see a value at least as new. But it's also important for self healing.
+// I mean it's not quite the same, but I actually think in practice it can be bypased in some situations wouild
+// idk why it's faster, I would expect much slower for many reasons. BUt lets get to that after we sanity check writes.
 func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	////TODO carefully consider how the write after read effects things here.
+	//anyway this is likely not precisely what etcd does on write but we hope it's close enough unlike reads.
 	trace := traceutil.Get(context.Background())
 	var write = e.etcd.KV().Write(trace)
 	write.Put(key, value, 0)
 	write.End()
-	// last benchmark ran with this
-	trace2 := traceutil.Get(context.Background())
-	var write2 = e.etcd.KV().Write(trace2)
-	write2.Put(key, value, 0)
-	write2.End()
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
@@ -540,12 +543,15 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	}
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
+	//if pineapple is selected on startup it runs this to start he node
 	if PINEAPPLE {
 		println("PINEAPPLE ENABLED (test mode)")
 		var storage pineapple.Storage
+		//if memory is selected it creates simple memory storage (never used anymore)
 		if MEMORY {
 			storage = pineapple.NewStorage()
 		} else {
+			//otherwise it creates EtcdStorage implementation.
 			storage = &EtcdStorage{
 				etcd:    srv,
 				lock:    sync.RWMutex{},
@@ -553,15 +559,18 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				storage: pineapple.NewStorage(),
 			}
 		}
+		//then sets up cas bs which I can explain later
 		var factory = func() *EtcdCas { return &EtcdCas{} }
+		//makes the node
 		srv.pineapple = pineapple.NewNode(storage, local, addresses, factory)
 		go func() {
+			//starts the pinapple process
 			reason := srv.pineapple.Run()
 			if reason != nil {
 				panic(reason)
 			}
 		}()
-
+		//blocks connecting and then prints connected
 		reason = srv.pineapple.Connect()
 		if reason != nil {
 			panic(reason)
