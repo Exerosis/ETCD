@@ -219,6 +219,10 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 	}
 	return resp.(*pb.TxnResponse), nil
 }
+
+// These functions get called when a client makes a call to a raft node
+// okay weird, and the request is just what message they want in?
+// yeah basically, it's just a message from the client that says what values to add and some other etcd info
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	if PINEAPPLE {
 		return s.PineapplePut(ctx, r)
