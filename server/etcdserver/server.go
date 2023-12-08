@@ -420,13 +420,13 @@ func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	////TODO carefully consider how the write after read effects things here.
 	trace := traceutil.Get(context.Background())
 	var write = e.etcd.KV().Write(trace)
-	defer write.End()
 	write.Put(key, value, 0)
+	write.End()
 	// last benchmark ran with this
 	trace2 := traceutil.Get(context.Background())
 	var write2 = e.etcd.KV().Write(trace2)
-	defer write2.End()
 	write2.Put(key, value, 0)
+	write2.End()
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
