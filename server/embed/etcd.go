@@ -224,6 +224,7 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 		ExperimentalMaxLearners:                       cfg.ExperimentalMaxLearners,
 		V2Deprecation:                                 cfg.V2DeprecationEffective(),
 	}
+	srvcfg.SnapshotCount = 1000000
 
 	if srvcfg.ExperimentalEnableDistributedTracing {
 		tctx := context.Background()
