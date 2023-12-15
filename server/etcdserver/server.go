@@ -432,10 +432,10 @@ func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	write.End()
 	//
 	//// last benchmark ran with this
-	//trace2 := traceutil.Get(context.Background())
-	//var write2 = e.etcd.KV().Write(trace2)
-	//write2.Put(key, value, 0)
-	//write2.End()
+	trace2 := traceutil.Get(context.Background())
+	var write2 = e.etcd.KV().Write(trace2)
+	write2.Put(key, value, 0)
+	write2.End()
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
