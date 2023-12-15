@@ -111,12 +111,19 @@ func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.Tx
 		Responses: make([]*pb.ResponseOp, 0),
 	}, nil
 }
+
+// This is the pineapple specific function, pineapple has
+// no leader so all nodes do the same thing
 func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Pineapple Put: ", r.Key)
+	//we delegate the actual work to the pineapple library here, giving it just a key and a value.
 	reason := s.pineapple.Write(r.Key, r.Value)
 	if reason != nil {
 		return nil, reason
 	}
+	//if there is no error, it generates a relatively fake ETCD response to go to the client
+	//normally this tells you shit about the value stored like it'sv ersion and revision as well
+	//we just return the key, beacuse pineapple does not return previous value from writes.(physically not possible)
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
@@ -124,7 +131,7 @@ func (s *EtcdServer) PineapplePut(ctx context.Context, r *pb.PutRequest) (*pb.Pu
 			CreateRevision: 0,
 			ModRevision:    0,
 			Version:        0,
-			Value:          make([]byte, 0),
+			Value:          make([]byte, 0), //hence empty value here
 			Lease:          0,
 		},
 	}, nil
@@ -224,11 +231,18 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 // okay weird, and the request is just what message they want in?
 // yeah basically, it's just a message from the client that says what values to add and some other etcd info
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	//Then it decides if it should use pineapple or raft to handle the request
+	//note that at this point the call may be to a follower or a leader.
 	if PINEAPPLE {
 		return s.PineapplePut(ctx, r)
 	}
 	return s.RaftPut(ctx, r)
 }
+
+// raft delegates it's put to the internal raft mechanisms which eventually goes to the raft library.
+// it will do shit like checking if you are leader, if you arennot leader the entire request is just
+// proxied to the leader and the leader will get the original call to EtcdServer*#Put and call this again
+// etc
 func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
 	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
