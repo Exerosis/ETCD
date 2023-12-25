@@ -19,7 +19,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"github.com/exerosis/RabiaGo/rabia"
+	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
+	"math"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -182,6 +186,51 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	}, nil
 }
 
+func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	const numSegments = 7
+	const parity = 3
+
+	// Calculating the size of each segment, rounding up
+	var segmentSize = int(math.Ceil(float64(len(r.Value)) / float64(numSegments-parity)))
+	var segments = reedsolomon.AllocAligned(numSegments, segmentSize)
+	var length = make([]byte, 4)
+	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
+	var data = append(length, r.Value...)
+	var startIndex = 0
+	for i := range segments[:numSegments-parity] {
+		endIndex := startIndex + segmentSize
+		if endIndex > len(r.Value) {
+			endIndex = len(r.Value)
+		}
+		copy(segments[i], data[startIndex:endIndex])
+		startIndex = endIndex
+	}
+	var id uint64
+	for !rabia.IsValid(id) {
+		var stamp = uint64(time.Now().UnixMilli())
+		id = uint64(rand.Uint32())<<32 | stamp
+	}
+	err := s.rsRabia.rabia.ProposeEach(id, segments)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.PutResponse{
+		Header: &pb.ResponseHeader{},
+		PrevKv: &mvccpb.KeyValue{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          make([]byte, 0), //hence empty value here
+			Lease:          0,
+		},
+	}, nil
+}
+func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+
+	return nil, nil
+}
+
 func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
 	if PINEAPPLE {
 		return s.PineappleTxn(ctx, r)
@@ -235,6 +284,9 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	//note that at this point the call may be to a follower or a leader.
 	if PINEAPPLE {
 		return s.PineapplePut(ctx, r)
+	}
+	if RS_RABIA {
+		return s.RabiaPut(ctx, r)
 	}
 	return s.RaftPut(ctx, r)
 }

@@ -21,6 +21,8 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/exerosis/PineappleGo/pineapple"
+	"github.com/exerosis/RabiaGo/rabia"
+	"github.com/klauspost/reedsolomon"
 	"math"
 	"math/rand"
 	"net"
@@ -220,7 +222,28 @@ func LoadEnv(name string) bool {
 }
 
 var PINEAPPLE = LoadEnv("PINEAPPLE")
+var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
+
+type RsRabia struct {
+	rabia   rabia.Node
+	encoder reedsolomon.Encoder
+}
+
+func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
+	node, err := rabia.MakeNode(address, addresses, pipes...)
+	if err != nil {
+		return nil, err
+	}
+	encoder, err := reedsolomon.New(4, 3)
+	if err != nil {
+		return nil, err
+	}
+	return &RsRabia{
+		rabia:   node,
+		encoder: encoder,
+	}, nil
+}
 
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
@@ -234,6 +257,7 @@ type EtcdServer struct {
 	consistIndex cindex.ConsistentIndexer // consistIndex is used to get/set/save consistentIndex
 	r            raftNode                 // uses 64-bit atomics; keep 64-bit aligned.
 	pineapple    pineapple.Node[*EtcdCas]
+	rsRabia      *RsRabia
 	readych      chan struct{}
 	Cfg          config.ServerConfig
 
@@ -582,6 +606,19 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(reason)
 		}
 		println("Connected")
+	} else if RS_RABIA {
+		node, err := NewRsRabia(address, addresses, 59696)
+		if err != nil {
+			panic(err)
+		}
+		srv.rsRabia = node
+		go func() {
+			err := node.rabia.Run()
+			if err != nil {
+				panic(err)
+			}
+		}()
+		println("RS RABIA ENABLED ")
 	} else {
 		println("RAFT ENABLED")
 	}

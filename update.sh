@@ -37,6 +37,12 @@ else
   export PINEAPPLE_MEMORY="false"
 fi
 
+if [ "$1" = "rs-rabia" ]; then
+  export RS_RABIA="true"
+else
+  export RS_RABIA="false"
+fi
+
 sudo rm -rf "$HOST.etcd"
 make build
 sudo ./bin/etcd --log-level panic \
