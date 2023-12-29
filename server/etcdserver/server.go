@@ -17,6 +17,7 @@ package etcdserver
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -228,6 +229,7 @@ var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 type RsRabia struct {
 	rabia   rabia.Node
 	encoder reedsolomon.Encoder
+	slots   *rabia.BlockingMap[uint64, uint64]
 }
 
 func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
@@ -242,6 +244,7 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 	return &RsRabia{
 		rabia:   node,
 		encoder: encoder,
+		slots:   rabia.NewBlockingMap[uint64, uint64](),
 	}, nil
 }
 
@@ -454,12 +457,6 @@ func (e *EtcdStorage) Set(key []byte, tag pineapple.Tag, value []byte) {
 	var write = e.etcd.KV().Write(trace)
 	write.Put(key, value, 0)
 	write.End()
-	//
-	//// last benchmark ran with this
-	trace2 := traceutil.Get(context.Background())
-	var write2 = e.etcd.KV().Write(trace2)
-	write2.Put(key, value, 0)
-	write2.End()
 	e.lock.Lock()
 	e.tags[string(key)] = tag
 	e.lock.Unlock()
@@ -616,6 +613,24 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			err := node.rabia.Run()
 			if err != nil {
 				panic(err)
+			}
+		}()
+		go func() {
+			for {
+				time.Sleep(time.Second)
+				trace := traceutil.Get(context.Background())
+				var write = srv.KV().Write(trace)
+				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
+					var key = make([]byte, 8)
+					binary.LittleEndian.PutUint64(key, id)
+					write.Put(key, data, 0)
+					node.slots.Set(id, i)
+					return nil
+				})
+				write.End()
+				if err != nil {
+					panic(err)
+				}
 			}
 		}()
 		println("RS RABIA ENABLED ")
