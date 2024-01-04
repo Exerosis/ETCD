@@ -25,6 +25,7 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -188,7 +189,8 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	println(string(r.Key))
+	var split = strings.Split(string(r.Key), "usertable:user")
+	println(split[1])
 	const numSegments = 3
 	const parity = 2
 	var length = make([]byte, 4)
