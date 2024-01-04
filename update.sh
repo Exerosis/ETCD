@@ -24,9 +24,8 @@ elif [ $HOST = "node-5" ]; then
 fi
 echo "Local IP: $IP"
 
-if [ "$1" = "raft" ]; then
+if [ "$1" = "pineapple" ]; then
   export PINEAPPLE="false"
-  export SETUP="--initial-cluster node-1=http://192.168.1.1:12380,node-2=http://192.168.1.2:12380,node-3=http://192.168.1.3:12380,node-4=http://192.168.1.4:12380"
 else
   export PINEAPPLE="true"
 fi
@@ -41,6 +40,10 @@ if [ "$1" = "rs-rabia" ]; then
   export RS_RABIA="true"
 else
   export RS_RABIA="false"
+fi
+
+if ["$1" = ""]; then
+  export SETUP="--initial-cluster node-1=http://192.168.1.1:12380,node-2=http://192.168.1.2:12380,node-3=http://192.168.1.3:12380,node-4=http://192.168.1.4:12380"
 fi
 
 sudo rm -rf "$HOST.etcd"
