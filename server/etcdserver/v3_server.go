@@ -188,7 +188,7 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	print(string(r.Key))
+	println(string(r.Key))
 	const numSegments = 3
 	const parity = 2
 	var length = make([]byte, 4)
