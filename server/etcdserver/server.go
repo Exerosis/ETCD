@@ -243,6 +243,7 @@ type RsRabia struct {
 }
 
 func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
+	print("starting")
 	node, err := rabia.MakeNode(address, addresses, pipes...)
 	print("made node")
 	var others []string
@@ -659,7 +660,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RS_RABIA {
-		node, err := NewRsRabia(address, addresses, 59696)
+		node, err := NewRsRabia(address, addresses, 5696)
 		if err != nil {
 			panic(err)
 		}
