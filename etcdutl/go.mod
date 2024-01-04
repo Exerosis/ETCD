@@ -53,6 +53,8 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jonboulle/clockwork v0.3.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.1.1 // indirect
+	github.com/klauspost/reedsolomon v1.12.0 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
