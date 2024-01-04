@@ -23,7 +23,6 @@ import (
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
-	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -190,7 +189,6 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
-	println(split[1])
 	const numSegments = 3
 	const parity = 2
 	var length = make([]byte, 4)
@@ -218,13 +216,15 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	if err != nil || !ok {
 		panic(err)
 	}
-	var id uint64
+	id, err := strconv.ParseUint(split[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
 	for !rabia.IsValid(id) {
-		var stamp = uint64(time.Now().UnixMilli())
-		id = uint64(rand.Uint32())<<32 | stamp
+		return nil, errors.ErrKeyNotFound
 	}
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
-	s.rsRabia.keys.WaitFor(string(r.Key))
+	s.rsRabia.keys.WaitFor(id)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,12 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	}, nil
 }
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	var slot = s.rsRabia.keys.WaitFor(string(r.Key))
+	var split = strings.Split(string(r.Key), "usertable:user")
+	id, err := strconv.ParseUint(split[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	var slot = s.rsRabia.keys.WaitFor(id)
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
@@ -252,7 +257,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	s.rsRabia.responsesLock.Unlock()
 	var buffer = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buffer, slot)
-	err := s.rsRabia.reader.Write(r.Key)
+	err = s.rsRabia.reader.Write(r.Key)
 	if err != nil {
 		return nil, err
 	}
