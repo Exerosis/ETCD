@@ -259,7 +259,7 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 	if err != nil {
 		return nil, err
 	}
-	encoder, err := reedsolomon.New(4, 3)
+	encoder, err := reedsolomon.New(3, 2)
 	if err != nil {
 		return nil, err
 	}
