@@ -226,14 +226,34 @@ var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 
+type RsReadResponses struct {
+	responses [][]byte
+	count     int
+	cond      *sync.Cond
+}
 type RsRabia struct {
-	rabia   rabia.Node
-	encoder reedsolomon.Encoder
-	slots   *rabia.BlockingMap[uint64, uint64]
+	rabia          rabia.Node
+	encoder        reedsolomon.Encoder
+	keys           *rabia.BlockingMap[string, uint64]
+	slots          *rabia.BlockingMap[uint64, uint64]
+	responses      map[uint64]*RsReadResponses
+	responsesLock  sync.RWMutex
+	reader         rabia.Connection
+	readersInbound []rabia.Connection
 }
 
 func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
 	node, err := rabia.MakeNode(address, addresses, pipes...)
+	var others []string
+	for _, other := range addresses {
+		if other != address {
+			others = append(others, other)
+		}
+	}
+	readersInbound, readersOutbound, err := rabia.GroupSet(address, 2000, others...)
+
+	var reader = rabia.Multicaster(readersOutbound...)
+
 	if err != nil {
 		return nil, err
 	}
@@ -241,11 +261,44 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 	if err != nil {
 		return nil, err
 	}
-	return &RsRabia{
-		rabia:   node,
-		encoder: encoder,
-		slots:   rabia.NewBlockingMap[uint64, uint64](),
-	}, nil
+	var rsRabia = &RsRabia{
+		rabia:          node,
+		encoder:        encoder,
+		slots:          rabia.NewBlockingMap[uint64, uint64](),
+		reader:         reader,
+		readersInbound: readersInbound,
+	}
+	for i, connection := range readersInbound {
+		connection := connection
+		i := i
+		go func() {
+			var header = make([]byte, 12)
+			err := connection.Read(header)
+			if err != nil {
+				panic(err)
+			}
+			var slot = binary.LittleEndian.Uint64(header[:])
+			var length = binary.LittleEndian.Uint32(header[8:])
+			var value = make([]byte, length)
+			err = connection.Read(value)
+			if err != nil {
+				panic(err)
+			}
+			rsRabia.responsesLock.RLock()
+			responses, present := rsRabia.responses[slot]
+			rsRabia.responsesLock.RUnlock()
+			if present {
+				responses.cond.L.Lock()
+				responses.responses[i] = value
+				responses.count++
+				if responses.count >= 4 {
+					responses.cond.Broadcast()
+				}
+				responses.cond.L.Unlock()
+			}
+		}()
+	}
+	return rsRabia, nil
 }
 
 // EtcdServer is the production implementation of the Server interface
@@ -511,6 +564,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		"192.168.1.2:2000",
 		"192.168.1.3:2000",
 		"192.168.1.4:2000",
+		"192.168.1.5:2000",
 	}
 	var local = fmt.Sprintf("%s:%d", address, 2000)
 	heartbeat := time.Duration(100_000) * time.Millisecond

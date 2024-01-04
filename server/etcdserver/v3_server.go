@@ -25,6 +25,7 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -187,30 +188,39 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	const numSegments = 7
-	const parity = 3
-
-	// Calculating the size of each segment, rounding up
-	var segmentSize = int(math.Ceil(float64(len(r.Value)) / float64(numSegments-parity)))
-	var segments = reedsolomon.AllocAligned(numSegments, segmentSize)
+	const numSegments = 3
+	const parity = 2
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
 	var data = append(length, r.Value...)
+	var segmentSize = int(math.Ceil(float64(len(data)) / float64(numSegments)))
+	var segments = reedsolomon.AllocAligned(numSegments+parity, segmentSize)
 	var startIndex = 0
-	for i := range segments[:numSegments-parity] {
+
+	for i := range segments[:numSegments] {
 		endIndex := startIndex + segmentSize
-		if endIndex > len(r.Value) {
-			endIndex = len(r.Value)
+		if endIndex > len(data) {
+			endIndex = len(data)
 		}
 		copy(segments[i], data[startIndex:endIndex])
 		startIndex = endIndex
+	}
+
+	err := s.rsRabia.encoder.Encode(segments)
+	if err != nil {
+		panic(err)
+	}
+
+	ok, err := s.rsRabia.encoder.Verify(segments)
+	if err != nil || !ok {
+		panic(err)
 	}
 	var id uint64
 	for !rabia.IsValid(id) {
 		var stamp = uint64(time.Now().UnixMilli())
 		id = uint64(rand.Uint32())<<32 | stamp
 	}
-	err := s.rsRabia.rabia.ProposeEach(id, segments)
+	err = s.rsRabia.rabia.ProposeEach(id, segments)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +237,52 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	}, nil
 }
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	var slot = s.rsRabia.keys.WaitFor(string(r.Key))
+	s.rsRabia.responsesLock.Lock()
+	var mutex = sync.Mutex{}
+	var responses = &RsReadResponses{
+		responses: make([][]byte, 5),
+		cond:      sync.NewCond(&mutex),
+	}
+	s.rsRabia.responses[slot] = responses
+	s.rsRabia.responsesLock.Unlock()
+	var buffer = make([]byte, 8)
+	binary.LittleEndian.PutUint64(buffer, slot)
+	err := s.rsRabia.reader.Write(r.Key)
+	if err != nil {
+		return nil, err
+	}
+	responses.cond.L.Lock()
+	if responses.count < 4 {
+		responses.cond.Wait()
+	}
+	err = s.rsRabia.encoder.ReconstructData(responses.responses)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	var combinedData []byte
+	for i := 0; i < 3; i++ {
+		combinedData = append(combinedData, responses.responses[i]...)
+	}
+	var length = binary.LittleEndian.Uint32(combinedData)
+	//put everything together
+	responses.cond.L.Unlock()
+	s.rsRabia.responsesLock.Lock()
+	delete(s.rsRabia.responses, slot)
+	s.rsRabia.responsesLock.Unlock()
+	var kvs = []*mvccpb.KeyValue{{
+		Key:            r.Key,
+		CreateRevision: 0,
+		ModRevision:    0,
+		Version:        0,
+		Value:          combinedData[4:length],
+		Lease:          0,
+	}}
+	return &pb.RangeResponse{
+		Header: &pb.ResponseHeader{},
+		Kvs:    kvs,
+	}, nil
 }
 
 func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
