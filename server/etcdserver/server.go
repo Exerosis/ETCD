@@ -266,7 +266,10 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 	var rsRabia = &RsRabia{
 		rabia:          node,
 		encoder:        encoder,
+		keys:           rabia.NewBlockingMap[string, uint64](),
 		slots:          rabia.NewBlockingMap[uint64, uint64](),
+		responses:      make(map[uint64]*RsReadResponses),
+		responsesLock:  sync.RWMutex{},
 		reader:         reader,
 		readersInbound: readersInbound,
 	}
