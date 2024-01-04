@@ -25,9 +25,9 @@ fi
 echo "Local IP: $IP"
 
 if [ "$1" = "pineapple" ]; then
-  export PINEAPPLE="false"
-else
   export PINEAPPLE="true"
+else
+  export PINEAPPLE="false"
 fi
 
 if [ "$1" = "memory" ]; then
