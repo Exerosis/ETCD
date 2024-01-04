@@ -568,6 +568,16 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		"192.168.1.4:2000",
 		"192.168.1.5:2000",
 	}
+	if RS_RABIA {
+		addresses = []string{
+			"192.168.1.1",
+			"192.168.1.2",
+			"192.168.1.3",
+			"192.168.1.4",
+			"192.168.1.5",
+		}
+	}
+
 	var local = fmt.Sprintf("%s:%d", address, 2000)
 	heartbeat := time.Duration(100_000) * time.Millisecond
 	srv = &EtcdServer{
