@@ -252,7 +252,7 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 			others = append(others, other)
 		}
 	}
-	readersInbound, readersOutbound, err := rabia.GroupSet(address, 2000, others...)
+	readersInbound, readersOutbound, err := rabia.GroupSet(address, 2002, others...)
 	print("Connected readers")
 	var reader = rabia.Multicaster(readersOutbound...)
 
