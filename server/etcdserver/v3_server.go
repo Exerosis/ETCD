@@ -188,6 +188,7 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	print(string(r.Key))
 	const numSegments = 3
 	const parity = 2
 	var length = make([]byte, 4)
@@ -221,6 +222,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		id = uint64(rand.Uint32())<<32 | stamp
 	}
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
+	s.rsRabia.keys.WaitFor(string(r.Key))
 	if err != nil {
 		return nil, err
 	}
