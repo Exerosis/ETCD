@@ -690,7 +690,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				trace := traceutil.Get(context.Background())
 				var write = srv.KV().Write(trace)
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
-					println("Consuming ", id)
+					//println("Consuming ", id)
 					var key = make([]byte, 8)
 					binary.LittleEndian.PutUint64(key, id)
 					write.Put(key, data, 0)
