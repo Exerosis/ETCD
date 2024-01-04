@@ -244,6 +244,7 @@ type RsRabia struct {
 
 func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
 	node, err := rabia.MakeNode(address, addresses, pipes...)
+	print("made node")
 	var others []string
 	for _, other := range addresses {
 		if other != address {
@@ -251,7 +252,7 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 		}
 	}
 	readersInbound, readersOutbound, err := rabia.GroupSet(address, 2000, others...)
-
+	print("Connected readers")
 	var reader = rabia.Multicaster(readersOutbound...)
 
 	if err != nil {
