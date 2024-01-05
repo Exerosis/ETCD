@@ -235,6 +235,7 @@ type RsRabia struct {
 	rabia          rabia.Node
 	encoder        reedsolomon.Encoder
 	keys           *rabia.BlockingMap[uint64, uint64]
+	requests       *rabia.BlockingMap[uint64, uint64]
 	slots          *rabia.BlockingMap[uint64, uint64]
 	responses      map[uint64]*RsReadResponses
 	responsesLock  sync.RWMutex
@@ -267,6 +268,7 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 		rabia:          node,
 		encoder:        encoder,
 		keys:           rabia.NewBlockingMap[uint64, uint64](),
+		requests:       rabia.NewBlockingMap[uint64, uint64](),
 		slots:          rabia.NewBlockingMap[uint64, uint64](),
 		responses:      make(map[uint64]*RsReadResponses),
 		responsesLock:  sync.RWMutex{},
@@ -694,6 +696,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					var key = make([]byte, 8)
 					binary.LittleEndian.PutUint64(key, id)
 					write.Put(key, data, 0)
+					node.requests.Set(id, id)
 					node.keys.Set(id, i)
 					node.slots.Set(i, i)
 					return nil

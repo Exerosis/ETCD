@@ -211,11 +211,6 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	if err != nil {
 		panic(err)
 	}
-
-	ok, err := s.rsRabia.encoder.Verify(segments)
-	if err != nil || !ok {
-		panic(err)
-	}
 	id, err := strconv.ParseUint(split[1], 10, 64)
 	if err != nil {
 		return nil, err
@@ -223,8 +218,9 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
+	s.rsRabia.requests.Delete(id)
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
-	s.rsRabia.keys.WaitFor(id)
+	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
 	}
