@@ -675,7 +675,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RS_RABIA {
-		node, err := NewRsRabia(address, addresses, 5696)
+		node, err := NewRsRabia(address, addresses, 5696, 5686, 5676)
 		if err != nil {
 			panic(err)
 		}
