@@ -675,7 +675,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RS_RABIA {
-		node, err := NewRsRabia(address, addresses, 5696, 5686, 5676)
+		node, err := NewRsRabia(address, addresses, 5696, 5686)
 		if err != nil {
 			panic(err)
 		}
@@ -695,7 +695,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					//println("Consuming ", id)
 					var key = make([]byte, 8)
 					binary.LittleEndian.PutUint64(key, id)
-					write.Put(key, data, 0)
+					//write.Put(key, data, 0)
 					node.requests.Set(id, id)
 					node.keys.Set(id, i)
 					node.slots.Set(i, i)
