@@ -688,7 +688,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}()
 		go func() {
 			for {
-				time.Sleep(time.Second)
+				time.Sleep(50 * time.Nanosecond)
 				trace := traceutil.Get(context.Background())
 				var write = srv.KV().Write(trace)
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
