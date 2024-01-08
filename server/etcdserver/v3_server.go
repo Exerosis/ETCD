@@ -191,7 +191,6 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 var outstanding int32 = 0
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	println(string(r.Key))
 	var split = strings.Split(string(r.Key), "usertable:user")
 	const numSegments = 3
 	const parity = 2
