@@ -699,9 +699,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					var key = make([]byte, 8)
 					binary.LittleEndian.PutUint64(key, id)
 					write.Put(key, data, 0)
-					//node.requests.Set(id, id)
-					//node.keys.Set(id, i)
-					//node.slots.Set(i, i)
+					node.requests.Set(id, id)
+					node.keys.Set(id, i)
+					node.slots.Set(i, i)
 					return nil
 				})
 				write.End()
