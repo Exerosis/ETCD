@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -187,11 +188,11 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	}, nil
 }
 
-var t = 0
+var t uint32 = 0
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	t++
-	println("got so far: ", t)
+	atomic.AddUint32(&t, 1)
+	println("got so far: ", atomic.LoadUint32(&t))
 	var split = strings.Split(string(r.Key), "usertable:user")
 	const numSegments = 3
 	const parity = 2
