@@ -188,7 +188,7 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	}, nil
 }
 
-var outstanding uint32 = 0
+var outstanding int32 = 0
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
@@ -221,12 +221,12 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
-	atomic.AddUint32(&outstanding, 1)
+	atomic.AddInt32(&outstanding, 1)
 	s.rsRabia.requests.Delete(id)
 	err = s.rsRabia.rabia.Propose(id, r.Value)
 	s.rsRabia.requests.WaitFor(id)
-	atomic.AddUint32(&outstanding, -1)
-	println("Outstanding: ", atomic.LoadUint32(&outstanding))
+	atomic.AddInt32(&outstanding, -1)
+	println("Outstanding: ", atomic.LoadInt32(&outstanding))
 	if err != nil {
 		return nil, err
 	}
