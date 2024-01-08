@@ -223,7 +223,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		return nil, errors.ErrKeyNotFound
 	}
 	//s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.ProposeEach(id, segments)
+	err = s.rsRabia.rabia.Propose(id, r.Value)
 	//s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
