@@ -245,6 +245,9 @@ type RsRabia struct {
 
 func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
 	println("starting")
+	for _, s := range addresses {
+		println(s)
+	}
 	node, err := rabia.MakeNode(address, addresses, pipes...)
 	println("made node")
 	var others []string
