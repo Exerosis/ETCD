@@ -26,7 +26,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -222,7 +221,6 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	s.rsRabia.requests.Delete(id)
 	err = s.rsRabia.rabia.Propose(id, r.Value)
 	s.rsRabia.requests.WaitFor(id)
-	println("Outstanding: ", atomic.LoadInt32(&outstanding))
 	if err != nil {
 		return nil, err
 	}
