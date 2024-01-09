@@ -691,14 +691,13 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}()
 		go func() {
 			for {
-				time.Sleep(50 * time.Nanosecond)
 				trace := traceutil.Get(context.Background())
 				var write = srv.KV().Write(trace)
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
 					//println("Consuming ", id)
 					var key = make([]byte, 8)
 					binary.LittleEndian.PutUint64(key, id)
-					//write.Put(key, data, 0)
+					write.Put(key, data, 0)
 					node.requests.Set(id, id)
 					node.keys.Set(id, i)
 					node.slots.Set(i, i)
