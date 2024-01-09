@@ -190,6 +190,9 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 
 var outstanding int32 = 0
 
+var counts = make(map[uint64]int)
+var countLock = &sync.Mutex{}
+
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
 	const numSegments = 3
@@ -221,6 +224,14 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
+	countLock.Lock()
+	current, present := counts[id]
+	if !present {
+		current = 0
+	}
+	counts[id] = current + 1
+	println("Id Count: ", current+1)
+	countLock.Unlock()
 	atomic.AddInt32(&outstanding, 1)
 	s.rsRabia.requests.Delete(id)
 	err = s.rsRabia.rabia.Propose(id, r.Value)
