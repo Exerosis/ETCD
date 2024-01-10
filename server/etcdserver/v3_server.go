@@ -237,6 +237,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	}, nil
 }
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	println("Got read request for: ", string(r.Key))
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
 	if err != nil {
@@ -276,6 +277,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	s.rsRabia.responsesLock.Lock()
 	delete(s.rsRabia.responses, slot)
 	s.rsRabia.responsesLock.Unlock()
+	println("Reconstructed data")
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,

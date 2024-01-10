@@ -289,6 +289,8 @@ func NewRsRabia(address string, addresses []string, pipes ...uint16) (*RsRabia, 
 			}
 			var slot = binary.LittleEndian.Uint64(header[:])
 			var length = binary.LittleEndian.Uint32(header[8:])
+			println("Slot: ", slot)
+			println("Length: ", length)
 			var value = make([]byte, length)
 			err = connection.Read(value)
 			if err != nil {
