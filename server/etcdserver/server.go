@@ -316,7 +316,6 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 	}
 	for i, connection := range readersInbound {
 		connection := connection
-		i := i
 		go func() {
 			var header = make([]byte, 8)
 			var response = make([]byte, 12)
