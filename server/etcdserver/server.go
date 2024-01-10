@@ -335,6 +335,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				var read = e.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 				result, err := read.Range(context.Background(), header, nil, options)
 				read.End()
+				println("Finished reading values")
 				if err != nil {
 					panic(err)
 				}
@@ -347,6 +348,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				if err != nil {
 					panic(err)
 				}
+				println("Wrote back response.")
 			}
 		}()
 	}
