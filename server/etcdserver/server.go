@@ -599,7 +599,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(reason)
 		}
 		for _, d := range addresses {
-			if strings.Contains(d.String(), "192.168.1.") {
+			if strings.Contains(d.String(), "10.10.1.") {
 				device = d
 				network = i
 			}
