@@ -244,6 +244,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		return nil, err
 	}
 	var slot = s.rsRabia.keys.WaitFor(id)
+	print("had to wait for slot a long time")
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
