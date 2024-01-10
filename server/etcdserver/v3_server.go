@@ -227,7 +227,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		finals[i] = append(index, segments[i]...)
 	}
 	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.Propose(id, r.Value)
+	err = s.rsRabia.rabia.Propose(id, r.Value[:segmentSize])
 	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
