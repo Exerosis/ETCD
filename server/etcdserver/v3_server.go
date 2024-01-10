@@ -262,6 +262,9 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		responses: make([][]byte, SEGMENTS+PARITY),
 		cond:      sync.NewCond(&mutex),
 	}
+	for i := 0; i < SEGMENTS+PARITY; i++ {
+		responses.responses[i] = nil
+	}
 	s.rsRabia.responses[slot] = responses
 	s.rsRabia.responsesLock.Unlock()
 	var buffer = make([]byte, 8)
