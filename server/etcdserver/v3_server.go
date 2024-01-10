@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -236,15 +237,18 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		},
 	}, nil
 }
+
+var test uint32 = 0
+
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	println("Got read request for: ", id)
+	atomic.AddUint32(&test, 1)
+	println("Test: ", atomic.LoadUint32(&test))
 	var slot = s.rsRabia.keys.WaitFor(id)
-	print("had to wait for slot a long time")
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
