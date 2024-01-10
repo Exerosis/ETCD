@@ -261,7 +261,6 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	s.rsRabia.responses[slot] = responses
 	s.rsRabia.responsesLock.Unlock()
-	println("built response object")
 	var buffer = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buffer, slot)
 	err = s.rsRabia.reader.Write(r.Key)

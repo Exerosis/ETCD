@@ -284,13 +284,14 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		connection := connection
 		i := i
 		go func() {
-			var header = make([]byte, 12)
+			var header = make([]byte, 8)
 			for {
 				err := connection.Read(header)
 				if err != nil {
 					panic(err)
 				}
 				var slot = binary.LittleEndian.Uint64(header[:])
+				println("WEnt to wrong place but slot is: ", slot)
 				var length = binary.LittleEndian.Uint32(header[8:])
 				println("Slot: ", slot)
 				println("Length: ", length)
