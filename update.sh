@@ -12,15 +12,15 @@ HOST=$(hostname | awk -F "." '{print $1}')
 echo "Hostname: $HOST"
 
 if [ $HOST = "node-1" ]; then
-    IP="192.168.1.1"
+    IP="10.10.1.1"
 elif [ $HOST = "node-2" ]; then
-    IP="192.168.1.2"
+    IP="10.10.1.2"
 elif [ $HOST = "node-3" ]; then
-    IP="192.168.1.3"
+    IP="10.10.1.3"
 elif [ $HOST = "node-4" ]; then
-    IP="192.168.1.4"
+    IP="10.10.1.4"
 elif [ $HOST = "node-5" ]; then
-    IP="192.168.1.5"
+    IP="10.10.1.5"
 fi
 echo "Local IP: $IP"
 
@@ -43,7 +43,7 @@ else
 fi
 
 if ["$1" = ""]; then
-  export SETUP="--initial-cluster node-1=http://192.168.1.1:12380,node-2=http://192.168.1.2:12380,node-3=http://192.168.1.3:12380,node-4=http://192.168.1.4:12380"
+  export SETUP="--initial-cluster node-1=http://10.10.1.1:12380,node-2=http://10.10.1.2:12380,node-3=http://10.10.1.3:12380,node-4=http://10.10.1.4:12380"
 fi
 
 sudo rm -rf "$HOST.etcd"
