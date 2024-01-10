@@ -344,7 +344,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				}
 				binary.LittleEndian.PutUint64(response[:], slot)
 				binary.LittleEndian.PutUint32(response[8:], uint32(len(result.KVs[0].Value)))
-				err = readersInbound[i].Write(append(response, result.KVs[0].Value...))
+				err = connection.Write(append(response, result.KVs[0].Value...))
 				if err != nil {
 					panic(err)
 				}
