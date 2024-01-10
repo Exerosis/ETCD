@@ -280,6 +280,13 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		readersOutbound: readersOutbound,
 		readersInbound:  readersInbound,
 	}
+	var currentNodeIndex int
+	for i, addr := range addresses {
+		if addr == address {
+			currentNodeIndex = i
+			break
+		}
+	}
 	for i, connection := range readersOutbound {
 		connection := connection
 		i := i
@@ -304,6 +311,9 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				rsRabia.responsesLock.RUnlock()
 				if present {
 					responses.cond.L.Lock()
+					if i >= currentNodeIndex {
+						i++
+					}
 					responses.responses[i] = value
 					responses.count++
 					if responses.count >= SEGMENTS {
