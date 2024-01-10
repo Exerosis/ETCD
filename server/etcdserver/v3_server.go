@@ -240,6 +240,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 
 var started uint32 = 0
 var waited uint32 = 0
+var finished uint32 = 0
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
@@ -260,12 +261,14 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	s.rsRabia.responses[slot] = responses
 	s.rsRabia.responsesLock.Unlock()
+	println("built response object")
 	var buffer = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buffer, slot)
 	err = s.rsRabia.reader.Write(r.Key)
 	if err != nil {
 		return nil, err
 	}
+	println("wrote: ", slot)
 	responses.cond.L.Lock()
 	if responses.count < 4 {
 		responses.cond.Wait()
@@ -286,6 +289,8 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	delete(s.rsRabia.responses, slot)
 	s.rsRabia.responsesLock.Unlock()
 	println("Reconstructed data")
+	atomic.AddUint32(&finished, 1)
+	println("Finished: ", atomic.LoadUint32(&finished))
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,
