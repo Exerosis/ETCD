@@ -188,18 +188,19 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	}, nil
 }
 
+const SEGMENTS = 3
+const PARITY = 2
+
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
-	const numSegments = 3
-	const parity = 2
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
 	var data = append(length, r.Value...)
-	var segmentSize = int(math.Ceil(float64(len(data)) / float64(numSegments)))
-	var segments = reedsolomon.AllocAligned(numSegments+parity, segmentSize)
+	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
+	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
 	var startIndex = 0
 
-	for i := range segments[:numSegments] {
+	for i := range segments[:SEGMENTS] {
 		endIndex := startIndex + segmentSize
 		if endIndex > len(data) {
 			endIndex = len(data)
@@ -252,7 +253,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
-		responses: make([][]byte, 5),
+		responses: make([][]byte, SEGMENTS+PARITY),
 		cond:      sync.NewCond(&mutex),
 	}
 	s.rsRabia.responses[slot] = responses
@@ -264,7 +265,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		return nil, err
 	}
 	responses.cond.L.Lock()
-	if responses.count < 4 {
+	if responses.count < SEGMENTS {
 		responses.cond.Wait()
 	}
 	for i := 0; i < 4; i++ {
@@ -290,7 +291,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 
 	var combinedData []byte
-	for i := 0; i < 3; i++ {
+	for i := 0; i < SEGMENTS; i++ {
 		combinedData = append(combinedData, responses.responses[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
