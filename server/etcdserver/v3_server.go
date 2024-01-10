@@ -263,7 +263,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	s.rsRabia.responsesLock.Unlock()
 	var buffer = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buffer, slot)
-	err = s.rsRabia.reader.Write(r.Key)
+	err = s.rsRabia.reader.Write(buffer)
 	if err != nil {
 		return nil, err
 	}
