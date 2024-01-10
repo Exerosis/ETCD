@@ -274,8 +274,8 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if responses.count < SEGMENTS {
 		responses.cond.Wait()
 	}
-	for i := 0; i < SEGMENTS; i++ {
-		if len(responses.responses[i]) == 0 {
+	for i := 0; i < SEGMENTS+PARITY; i++ {
+		if responses.responses[i] != nil && len(responses.responses[i]) == 0 {
 			println("Found bad lengther")
 			var kvs = []*mvccpb.KeyValue{{
 				Key:            r.Key,
@@ -292,7 +292,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		}
 	}
 	println("going to reconstruct")
-	err = s.rsRabia.encoder.ReconstructData(responses.responses)
+	err = s.rsRabia.encoder.Reconstruct(responses.responses)
 	if err != nil {
 		return nil, err
 	}
