@@ -270,6 +270,18 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	for i := 0; i < 4; i++ {
 		if len(responses.responses[i]) == 0 {
 			println("Found bad lengther")
+			var kvs = []*mvccpb.KeyValue{{
+				Key:            r.Key,
+				CreateRevision: 0,
+				ModRevision:    0,
+				Version:        0,
+				Value:          make([]byte, 0),
+				Lease:          0,
+			}}
+			return &pb.RangeResponse{
+				Header: &pb.ResponseHeader{},
+				Kvs:    kvs,
+			}, nil
 		}
 	}
 	err = s.rsRabia.encoder.ReconstructData(responses.responses)
