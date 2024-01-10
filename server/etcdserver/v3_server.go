@@ -267,6 +267,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if responses.count < 4 {
 		responses.cond.Wait()
 	}
+	println(len(responses.responses[0]))
 	err = s.rsRabia.encoder.ReconstructData(responses.responses)
 	if err != nil {
 		return nil, err

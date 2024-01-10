@@ -336,11 +336,14 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				if err != nil {
 					panic(err)
 				}
-				if len(result.KVs) != 1 {
+				if len(result.KVs) < 1 {
+					binary.LittleEndian.PutUint64(response[:], slot)
+					binary.LittleEndian.PutUint32(response[8:], 0)
 					panic("We have a tag for data that ETCD isn't storing!")
+				} else {
+					binary.LittleEndian.PutUint64(response[:], slot)
+					binary.LittleEndian.PutUint32(response[8:], uint32(len(result.KVs[0].Value)))
 				}
-				binary.LittleEndian.PutUint64(response[:], slot)
-				binary.LittleEndian.PutUint32(response[8:], uint32(len(result.KVs[0].Value)))
 
 				err = readersInbound[i].Write(append(response, result.KVs[0].Value...))
 				if err != nil {
