@@ -316,7 +316,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          combinedData[5:length],
+		Value:          combinedData[5:],
 		Lease:          0,
 	}}
 	return &pb.RangeResponse{
