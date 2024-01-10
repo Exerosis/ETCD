@@ -284,14 +284,13 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		connection := connection
 		i := i
 		go func() {
-			var header = make([]byte, 8)
+			var header = make([]byte, 12)
 			for {
 				err := connection.Read(header)
 				if err != nil {
 					panic(err)
 				}
 				var slot = binary.LittleEndian.Uint64(header[:])
-				println("WEnt to wrong place but slot is: ", slot)
 				var length = binary.LittleEndian.Uint32(header[8:])
 				println("Slot: ", slot)
 				println("Length: ", length)
@@ -329,6 +328,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				var slot = binary.LittleEndian.Uint64(header)
 				println("Got request for slot: ", slot)
 				var key = rsRabia.slots.WaitFor(slot)
+				println("Finished waiting on slot")
 				binary.LittleEndian.PutUint64(header, key)
 				var options = mvcc.RangeOptions{}
 				trace := traceutil.Get(context.Background())
