@@ -368,6 +368,9 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	if PINEAPPLE {
 		return s.PineappleRange(ctx, r)
 	}
+	if RS_RABIA {
+		return s.RabiaRange(ctx, r)
+	}
 	return s.RaftRange(ctx, r)
 }
 func (s *EtcdServer) RaftRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
