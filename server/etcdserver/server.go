@@ -280,9 +280,8 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		readersOutbound: readersOutbound,
 		readersInbound:  readersInbound,
 	}
-	for i, connection := range readersOutbound {
+	for _, connection := range readersOutbound {
 		connection := connection
-		i := i
 		go func() {
 			var header = make([]byte, 12)
 			for {
@@ -299,12 +298,13 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				if err != nil {
 					panic(err)
 				}
+				var index = binary.LittleEndian.Uint16(value)
 				rsRabia.responsesLock.RLock()
 				responses, present := rsRabia.responses[slot]
 				rsRabia.responsesLock.RUnlock()
 				if present {
 					responses.cond.L.Lock()
-					responses.responses[i] = value
+					responses.responses[index] = value[3:]
 					responses.count++
 					if responses.count >= SEGMENTS {
 						responses.cond.Broadcast()

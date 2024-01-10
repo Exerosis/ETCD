@@ -220,6 +220,12 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
+	var finals = make([][]byte, SEGMENTS+PARITY)
+	for i := range finals {
+		var index = make([]byte, 2)
+		binary.LittleEndian.PutUint16(index, uint16(i))
+		finals[i] = append(index, segments[i]...)
+	}
 	s.rsRabia.requests.Delete(id)
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
 	s.rsRabia.requests.WaitFor(id)
