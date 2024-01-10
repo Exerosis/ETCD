@@ -238,7 +238,8 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	}, nil
 }
 
-var test uint32 = 0
+var started uint32 = 0
+var waited uint32 = 0
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
@@ -246,9 +247,11 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if err != nil {
 		return nil, err
 	}
-	atomic.AddUint32(&test, 1)
-	println("Test: ", atomic.LoadUint32(&test))
+	atomic.AddUint32(&started, 1)
+	println("Started: ", atomic.LoadUint32(&started))
 	var slot = s.rsRabia.keys.WaitFor(id)
+	atomic.AddUint32(&waited, 1)
+	println("Waited: ", atomic.LoadUint32(&waited))
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
