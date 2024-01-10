@@ -264,7 +264,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 	if err != nil {
 		return nil, err
 	}
-	encoder, err := reedsolomon.New(3, 2)
+	encoder, err := reedsolomon.New(SEGMENTS, PARITY)
 	if err != nil {
 		return nil, err
 	}
