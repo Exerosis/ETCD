@@ -613,6 +613,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	fmt.Printf("Address: %s\n", device)
 
 	var address = strings.Split(device.String(), "/")[0]
+	println("address: ", address)
 	var addresses = []string{
 		"10.10.1.1:2000",
 		"10.10.1.2:2000",
