@@ -267,7 +267,11 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if responses.count < 4 {
 		responses.cond.Wait()
 	}
-	println(len(responses.responses[0]))
+	for i := 0; i < 4; i++ {
+		if len(responses.responses[i]) == 0 {
+			println("Found bad lengther")
+		}
+	}
 	err = s.rsRabia.encoder.ReconstructData(responses.responses)
 	if err != nil {
 		return nil, err
@@ -278,6 +282,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		combinedData = append(combinedData, responses.responses[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
+	println("Read length: ", length)
 	//put everything together
 	responses.cond.L.Unlock()
 	s.rsRabia.responsesLock.Lock()
