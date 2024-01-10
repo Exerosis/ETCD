@@ -248,11 +248,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if err != nil {
 		return nil, err
 	}
-	atomic.AddUint32(&started, 1)
-	println("Started: ", atomic.LoadUint32(&started))
 	var slot = s.rsRabia.keys.WaitFor(id)
-	atomic.AddUint32(&waited, 1)
-	println("Waited: ", atomic.LoadUint32(&waited))
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
@@ -267,7 +263,6 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if err != nil {
 		return nil, err
 	}
-	println("wrote: ", slot)
 	responses.cond.L.Lock()
 	if responses.count < 4 {
 		responses.cond.Wait()

@@ -326,16 +326,13 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 					panic(err)
 				}
 				var slot = binary.LittleEndian.Uint64(header)
-				println("Got request for slot: ", slot)
 				var key = rsRabia.slots.WaitFor(slot)
-				println("Finished waiting on slot")
 				binary.LittleEndian.PutUint64(header, key)
 				var options = mvcc.RangeOptions{}
 				trace := traceutil.Get(context.Background())
 				var read = e.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 				result, err := read.Range(context.Background(), header, nil, options)
 				read.End()
-				println("Finished reading values")
 				if err != nil {
 					panic(err)
 				}
@@ -344,11 +341,11 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				}
 				binary.LittleEndian.PutUint64(response[:], slot)
 				binary.LittleEndian.PutUint32(response[8:], uint32(len(result.KVs[0].Value)))
+
 				err = readersOutbound[i].Write(append(response, result.KVs[0].Value...))
 				if err != nil {
 					panic(err)
 				}
-				println("Wrote back response.")
 			}
 		}()
 	}
