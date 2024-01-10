@@ -221,7 +221,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		return nil, errors.ErrKeyNotFound
 	}
 	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.Propose(id, r.Value)
+	err = s.rsRabia.rabia.ProposeEach(id, segments)
 	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          combinedData[4:length],
+		Value:          combinedData[5:length],
 		Lease:          0,
 	}}
 	return &pb.RangeResponse{
