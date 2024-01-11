@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -256,7 +257,9 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if err != nil {
 		return nil, err
 	}
+	println("Waiting for slot")
 	var slot = s.rsRabia.keys.WaitFor(id)
+	fmt.Printf("Got slot: %d\n", slot)
 	s.rsRabia.responsesLock.Lock()
 	var mutex = sync.Mutex{}
 	var responses = &RsReadResponses{
