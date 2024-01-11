@@ -250,6 +250,7 @@ var waited uint32 = 0
 var finished uint32 = 0
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	println("\nRabia Read")
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
 	if err != nil {
@@ -269,14 +270,18 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	s.rsRabia.responsesLock.Unlock()
 	var buffer = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buffer, slot)
+	println("Writing to reader")
 	err = s.rsRabia.reader.Write(buffer)
 	if err != nil {
 		return nil, err
 	}
+	println("Response Lock")
 	responses.cond.L.Lock()
 	if responses.count < SEGMENTS {
+		println("Response wait")
 		responses.cond.Wait()
 	}
+	println("Received responses")
 	for i := 0; i < SEGMENTS+PARITY; i++ {
 		if responses.responses[i] != nil && len(responses.responses[i]) == 0 {
 			println("Found bad lengther")
