@@ -3,7 +3,7 @@ module go.etcd.io/etcd/tests/v3
 go 1.19
 
 replace (
-	github.com/Bompedy/RS-Paxos => ../RS-Paxos
+	github.com/Bompedy/RS-Paxos => ../../RS-Paxos
 	github.com/exerosis/PineappleGo => ../../PineappleGo
 	github.com/exerosis/RabiaGo => ../../RabiaGo
 	github.com/exerosis/raft => ../../Raft

@@ -84,7 +84,7 @@ require (
 )
 
 replace (
-	github.com/Bompedy/RS-Paxos => ../RS-Paxos
+	github.com/Bompedy/RS-Paxos => ../../RS-Paxos
 	github.com/exerosis/PineappleGo => ../../PineappleGo
 	github.com/exerosis/RabiaGo => ../../RabiaGo
 	github.com/exerosis/raft => ../../Raft
