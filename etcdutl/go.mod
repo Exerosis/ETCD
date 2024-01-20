@@ -14,6 +14,7 @@ replace (
 // Bad imports are sometimes causing attempts to pull that code.
 // This makes the error more explicit.
 replace (
+	github.com/Bompedy/RS-Paxos => ../RS-Paxos
 	github.com/exerosis/PineappleGo => ../../PineappleGo
 	github.com/exerosis/RabiaGo => ../../RabiaGo
 	github.com/exerosis/raft => ../../Raft
