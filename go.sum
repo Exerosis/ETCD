@@ -38,8 +38,6 @@ git.schwanenlied.me/yawning/x448.git v0.0.0-20170617130356-01b048fb03d6/go.mod h
 github.com/BertoldVdb/go-misc v0.1.8 h1:0A621H0AhZXjUcqRQP423FpL/cbuF90uYFF2YDQOqoo=
 github.com/BertoldVdb/go-misc v0.1.8/go.mod h1:CsYsQoLZEbmk8eoWVIFc1a90rN9dXPoXfbttv6GWAuE=
 github.com/BertoldVdb/logrus-prefixed-formatter v0.5.2/go.mod h1:G4TbQ/67FPyoy2PlnZu8K/UHLMJ+jEdzjSLFcRnes5k=
-github.com/Bompedy/RS-Paxos v0.0.0-20240115011504-097bffde955a h1:YWnrZdzK/to82f1ztOwG5bvW1sn0dYEsfl2XhSf/Eao=
-github.com/Bompedy/RS-Paxos v0.0.0-20240115011504-097bffde955a/go.mod h1:QOT98KayzmK30HLbyPsptygqJA7j/8F+GZxsraVwBtE=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=

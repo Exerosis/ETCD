@@ -3,6 +3,7 @@ module go.etcd.io/etcd/server/v3
 go 1.19
 
 require (
+	github.com/Bompedy/RS-Paxos v0.0.0-20240115011504-097bffde955a
 	github.com/coreos/go-semver v0.3.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dustin/go-humanize v1.0.0
@@ -50,7 +51,6 @@ require (
 
 require (
 	github.com/BertoldVdb/go-misc v0.1.8 // indirect
-	github.com/Bompedy/RS-Paxos v0.0.0-20240115011504-097bffde955a // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/better-concurrent/guc v0.0.0-20190520022744-eb29266403a1 // indirect
