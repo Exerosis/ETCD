@@ -740,7 +740,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(err)
 		}
 		println("RS-PAXOS: CONNECTED")
-	} else if PINEAPPLE {
+	} else if PINEAPPLE || MEMORY {
 		println("PINEAPPLE ENABLED (test mode)")
 		var storage pineapple.Storage
 		//if memory is selected it creates simple memory storage (never used anymore)

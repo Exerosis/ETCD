@@ -397,7 +397,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 }
 
 func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
-	if PINEAPPLE {
+	if MEMORY || PINEAPPLE {
 		return s.PineappleTxn(ctx, r)
 	}
 	if txn.IsTxnReadonly(r) {
@@ -450,7 +450,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	if RS_PAXOS {
 		return s.PaxosPut(r)
 	}
-	if PINEAPPLE {
+	if MEMORY || PINEAPPLE {
 		return s.PineapplePut(ctx, r)
 	}
 	if RS_RABIA {
@@ -475,7 +475,7 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	if RS_PAXOS {
 		return s.PaxosGet(ctx, r)
 	}
-	if PINEAPPLE {
+	if MEMORY || PINEAPPLE {
 		return s.PineappleRange(ctx, r)
 	}
 	if RS_RABIA {
@@ -523,7 +523,7 @@ func (s *EtcdServer) RaftRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ran
 	return resp, err
 }
 func (s *EtcdServer) DeleteRange(ctx context.Context, r *pb.DeleteRangeRequest) (*pb.DeleteRangeResponse, error) {
-	if PINEAPPLE {
+	if MEMORY || PINEAPPLE {
 		return s.PineappleDeleteRange(ctx, r)
 	}
 	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{DeleteRange: r})
