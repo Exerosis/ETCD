@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"github.com/Bompedy/RS-Paxos/paxos"
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
@@ -222,9 +223,23 @@ func LoadEnv(name string) bool {
 	return i
 }
 
+func LoadInt(name string) int {
+	s := os.Getenv(name)
+	i, err := strconv.ParseInt(s, 0, 64)
+	if nil != err {
+		return -1
+	}
+	return int(i)
+}
+
 var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
+var RS_PAXOS = LoadEnv("RS_PAXOS")
+var NODES = LoadInt("NODES")
+var FAILURES = LoadInt("FAILURES")
+var SEGMENTS = NODES - FAILURES
+var PARITY = FAILURES
 
 type RsReadResponses struct {
 	responses [][]byte
@@ -449,6 +464,8 @@ type EtcdServer struct {
 	// Should only be set within apply code path. Used to force snapshot after cluster version downgrade.
 	forceSnapshot     bool
 	corruptionChecker CorruptionChecker
+
+	paxos paxos.Node
 }
 
 type EtcdCas struct {
@@ -613,24 +630,20 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	fmt.Printf("Address: %s\n", device)
 
 	var address = strings.Split(device.String(), "/")[0]
-	var addresses = []string{
-		"10.10.1.1:2000",
-		"10.10.1.2:2000",
-		"10.10.1.3:2000",
-		"10.10.1.4:2000",
-		"10.10.1.5:2000",
-	}
-	if RS_RABIA {
-		addresses = []string{
-			"10.10.1.1",
-			"10.10.1.2",
-			"10.10.1.3",
-			"10.10.1.4",
-			"10.10.1.5",
+	var local = fmt.Sprintf("%s:%d", address, 2000)
+	addresses := make([]string, 0, PARITY+SEGMENTS)
+	for i := 0; i < PARITY+SEGMENTS; i++ {
+		// Increment the last digit of the base IP address
+		currentAddress := fmt.Sprintf("10.10.1.%d", i+1)
+		if RS_PAXOS {
+			currentAddress = fmt.Sprintf("10.10.1.%d:%d", i+1, 2000)
+		}
+
+		if !RS_PAXOS && RS_RABIA || RS_PAXOS && currentAddress != local {
+			addresses = append(addresses, currentAddress)
 		}
 	}
 
-	var local = fmt.Sprintf("%s:%d", address, 2000)
 	heartbeat := time.Duration(100_000) * time.Millisecond
 	srv = &EtcdServer{
 		readych:               make(chan struct{}),
@@ -689,7 +702,45 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	//if pineapple is selected on startup it runs this to start he node
-	if PINEAPPLE {
+	if RS_PAXOS {
+		encoder, err := reedsolomon.New(3, 2)
+		if err != nil {
+			panic("PROBLEM CREATING RS ENCODER")
+		}
+
+		srv.paxos = paxos.Node{
+			Clients: make([]paxos.Client, 0),
+			Encoder: encoder,
+			Total:   len(addresses) + 1,
+			Log: paxos.Log{
+				Lock:    &sync.Mutex{},
+				Entries: make(map[uint32]*paxos.Entry),
+			},
+		}
+		go func() {
+			println("RS-PAXOS: ACCEPTING")
+			err := srv.paxos.Accept(local, func(key []byte, value []byte) {
+				trace := traceutil.Get(context.TODO())
+				var write = srv.KV().Write(trace)
+				write.Put(key, value, 0)
+				write.End()
+			})
+			if err != nil {
+				panic(err)
+			}
+		}()
+		err = srv.paxos.Connect(addresses, func(key []byte, value []byte) {
+			trace := traceutil.Get(context.Background())
+			var write = srv.KV().Write(trace)
+			write.Put(key, value, 0)
+			write.End()
+		})
+
+		if err != nil {
+			panic(err)
+		}
+		println("RS-PAXOS: CONNECTED")
+	} else if PINEAPPLE {
 		println("PINEAPPLE ENABLED (test mode)")
 		var storage pineapple.Storage
 		//if memory is selected it creates simple memory storage (never used anymore)

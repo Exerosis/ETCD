@@ -107,6 +107,69 @@ type Authenticator interface {
 	RoleList(ctx context.Context, r *pb.AuthRoleListRequest) (*pb.AuthRoleListResponse, error)
 }
 
+func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	if r.RangeEnd != nil {
+		panic("Range not supported only one key at a time!")
+	}
+
+	//value, reason := s.paxos.Read(s, r.Key)
+
+	var options = mvcc.RangeOptions{}
+	trace := traceutil.Get(context.Background())
+	var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	value, err := read.Range(context.Background(), r.Key, nil, options)
+	if err != nil {
+		panic(err)
+	}
+
+	var val []byte
+	val = nil
+	if len(value.KVs) > 0 {
+		val = value.KVs[0].Value
+	}
+
+	var kvs = []*mvccpb.KeyValue{{
+		Key:            r.Key,
+		CreateRevision: 0,
+		ModRevision:    0,
+		Version:        0,
+		Value:          val,
+		Lease:          0,
+	}}
+
+	read.End()
+	return &pb.RangeResponse{
+		Header: &pb.ResponseHeader{},
+		Kvs:    kvs,
+	}, nil
+}
+
+func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
+	s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
+		trace := traceutil.Get(context.TODO())
+		var write = s.KV().Write(trace)
+		write.Put(key, value, 0)
+		write.End()
+	})
+	//
+	//trace := traceutil.Get(context.Background())
+	//var write = s.KV().Write(trace)
+	//write.Put(key, value, 0)
+	//write.End()
+
+	return &pb.PutResponse{
+		Header: &pb.ResponseHeader{},
+		PrevKv: &mvccpb.KeyValue{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          make([]byte, 0), //hence empty value here
+			Lease:          0,
+		},
+	}, nil
+}
+
 func (s *EtcdServer) PineappleTxn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse, error) {
 	err := s.pineapple.ReadModifyWrite(r.Compare[0].Key, &EtcdCas{*r})
 	if err != nil {
@@ -188,9 +251,6 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 		PrevKvs: kvs,
 	}, nil
 }
-
-const SEGMENTS = 3
-const PARITY = 2
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	var split = strings.Split(string(r.Key), "usertable:user")
@@ -387,6 +447,9 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//Then it decides if it should use pineapple or raft to handle the request
 	//note that at this point the call may be to a follower or a leader.
+	if RS_PAXOS {
+		return s.PaxosPut(r)
+	}
 	if PINEAPPLE {
 		return s.PineapplePut(ctx, r)
 	}
@@ -409,6 +472,9 @@ func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResp
 	return resp.(*pb.PutResponse), nil
 }
 func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	if RS_PAXOS {
+		return s.PaxosGet(ctx, r)
+	}
 	if PINEAPPLE {
 		return s.PineappleRange(ctx, r)
 	}
