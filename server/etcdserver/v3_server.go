@@ -459,6 +459,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		return s.PineapplePut(ctx, r)
 	}
 	if RS_RABIA {
+		println("Rabia put")
 		return s.RabiaPut(ctx, r)
 	}
 	return s.RaftPut(ctx, r)
