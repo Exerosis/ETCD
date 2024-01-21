@@ -145,12 +145,17 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 }
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
-	s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
-		trace := traceutil.Get(context.TODO())
-		var write = s.KV().Write(trace)
-		write.Put(key, value, 0)
-		write.End()
-	})
+	//s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
+	//	trace := traceutil.Get(context.TODO())
+	//	var write = s.KV().Write(trace)
+	//	write.Put(key, value, 0)
+	//	write.End()
+	//})
+
+	trace := traceutil.Get(context.TODO())
+	var write = s.KV().Write(trace)
+	write.Put(r.Key, r.Value, 0)
+	write.End()
 	//
 	//trace := traceutil.Get(context.Background())
 	//var write = s.KV().Write(trace)
