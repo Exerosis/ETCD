@@ -3,6 +3,7 @@ module go.etcd.io/etcd/server/v3
 go 1.19
 
 require (
+	github.com/Bompedy/RS-Paxos v0.0.0-20240115011504-097bffde955a
 	github.com/coreos/go-semver v0.3.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dustin/go-humanize v1.0.0
@@ -83,6 +84,7 @@ require (
 )
 
 replace (
+	github.com/Bompedy/RS-Paxos => ../../RS-Paxos
 	github.com/exerosis/PineappleGo => ../../PineappleGo
 	github.com/exerosis/RabiaGo => ../../RabiaGo
 	github.com/exerosis/raft => ../../Raft
