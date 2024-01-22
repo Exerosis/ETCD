@@ -640,9 +640,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 
 		if !RS_PAXOS && RS_RABIA || RS_PAXOS && currentAddress != local {
+			fmt.Printf("Adding address: %s", currentAddress)
 			addresses = append(addresses, currentAddress)
 		}
 	}
+
+	fmt.Printf("Local: %s", address)
 
 	heartbeat := time.Duration(100_000) * time.Millisecond
 	srv = &EtcdServer{
