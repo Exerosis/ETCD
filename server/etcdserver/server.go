@@ -22,6 +22,7 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/Bompedy/RS-Paxos/paxos"
+	"github.com/dustin/go-humanize"
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
