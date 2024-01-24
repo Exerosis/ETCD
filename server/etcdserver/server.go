@@ -706,7 +706,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	//if pineapple is selected on startup it runs this to start he node
 	if RS_PAXOS {
-		encoder, err := reedsolomon.New(3, 2)
+		encoder, err := reedsolomon.New(SEGMENTS, PARITY)
 		if err != nil {
 			panic("PROBLEM CREATING RS ENCODER")
 		}
