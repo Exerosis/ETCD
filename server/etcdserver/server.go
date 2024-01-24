@@ -631,7 +631,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	var address = strings.Split(device.String(), "/")[0]
 	var local = fmt.Sprintf("%s:%d", address, 2000)
-	addresses := make([]string, PARITY+SEGMENTS)
+	addresses := make([]string, 0, PARITY+SEGMENTS)
 	for i := 0; i < PARITY+SEGMENTS; i++ {
 		// Increment the last digit of the base IP address
 		currentAddress := fmt.Sprintf("10.10.1.%d", i+1)
