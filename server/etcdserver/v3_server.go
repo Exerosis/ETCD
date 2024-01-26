@@ -283,7 +283,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		finals[i] = append(index, segments[i]...)
 	}
 	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.Propose(id, finals[0])
+	err = s.rsRabia.rabia.ProposeEach(id, finals)
 	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
@@ -335,30 +335,38 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	println("Response Lock")
 	responses.cond.L.Lock()
-	if responses.count < SEGMENTS {
+	for responses.count < SEGMENTS {
 		println("Response wait")
 		responses.cond.Wait()
 	}
 	println("Received responses")
+	var segments = make([][]byte, SEGMENTS+PARITY)
 	for i := 0; i < SEGMENTS+PARITY; i++ {
-		if responses.responses[i] != nil && len(responses.responses[i]) == 0 {
-			println("Found bad lengther")
-			var kvs = []*mvccpb.KeyValue{{
-				Key:            r.Key,
-				CreateRevision: 0,
-				ModRevision:    0,
-				Version:        0,
-				Value:          make([]byte, 0),
-				Lease:          0,
-			}}
-			return &pb.RangeResponse{
-				Header: &pb.ResponseHeader{},
-				Kvs:    kvs,
-			}, nil
+		var response = responses.responses[i]
+		if response != nil {
+			if len(response) == 0 {
+				println("Found bad lengther")
+				var kvs = []*mvccpb.KeyValue{{
+					Key:            r.Key,
+					CreateRevision: 0,
+					ModRevision:    0,
+					Version:        0,
+					Value:          make([]byte, 0),
+					Lease:          0,
+				}}
+				return &pb.RangeResponse{
+					Header: &pb.ResponseHeader{},
+					Kvs:    kvs,
+				}, nil
+			} else {
+				var index = binary.LittleEndian.Uint16(response)
+				segments[index] = response[2:]
+			}
 		}
 	}
+
 	println("going to reconstruct")
-	err = s.rsRabia.encoder.Reconstruct(responses.responses)
+	err = s.rsRabia.encoder.Reconstruct(segments)
 	if err != nil {
 		return nil, err
 	}
