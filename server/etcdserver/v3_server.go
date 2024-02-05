@@ -373,7 +373,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 
 	var combinedData []byte
 	for i := 0; i < SEGMENTS; i++ {
-		combinedData = append(combinedData, responses.responses[i]...)
+		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Read length: ", length)
