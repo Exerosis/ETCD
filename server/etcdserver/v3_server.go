@@ -254,7 +254,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	println("Original Length: ", len(r.Value))
 	var data = append(length, r.Value...)
 	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
-	println("Original Segement size: ", segmentSize+2)
+	println("Original Segment size: ", segmentSize+2)
 	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
 	var startIndex = 0
 
@@ -392,7 +392,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          combinedData[5:],
+		Value:          combinedData[4:],
 		Lease:          0,
 	}}
 	return &pb.RangeResponse{
