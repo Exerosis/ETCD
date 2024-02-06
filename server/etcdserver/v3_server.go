@@ -367,6 +367,20 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		}
 	}
 
+	var key = s.rsRabia.slots.WaitFor(slot)
+	var header = make([]byte, 8)
+	binary.LittleEndian.PutUint64(header, key)
+	var options = mvcc.RangeOptions{}
+	trace := traceutil.Get(context.Background())
+	var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	result, err := read.Range(context.Background(), header, nil, options)
+	read.End()
+	if err != nil {
+		panic(err)
+	}
+	var index = binary.LittleEndian.Uint16(result.KVs[0].Value)
+	segments[index] = result.KVs[0].Value[2:]
+
 	println("going to reconstruct")
 	err = s.rsRabia.encoder.Reconstruct(segments)
 	if err != nil {
