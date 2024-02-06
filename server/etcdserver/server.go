@@ -341,6 +341,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 					panic(err)
 				}
 				var slot = binary.LittleEndian.Uint64(header)
+				println("Asked about slot: ", slot)
 				var key = rsRabia.slots.WaitFor(slot)
 				binary.LittleEndian.PutUint64(header, key)
 				var options = mvcc.RangeOptions{}
@@ -361,6 +362,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 				}
 
 				err = readersInbound[i].Write(append(response, result.KVs[0].Value...))
+				println("Wrote out: ", slot)
 				if err != nil {
 					panic(err)
 				}
