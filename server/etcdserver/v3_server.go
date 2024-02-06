@@ -370,6 +370,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	println("going to reconstruct")
 	err = s.rsRabia.encoder.Reconstruct(segments)
 	if err != nil {
+		println("too few shards ig? ", err)
 		return nil, err
 	}
 
