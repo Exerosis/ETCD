@@ -321,7 +321,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 					responses.cond.L.Lock()
 					responses.responses[index] = value
 					responses.count++
-					if responses.count >= SEGMENTS {
+					if responses.count >= SEGMENTS+PARITY {
 						responses.cond.Broadcast()
 					}
 					responses.cond.L.Unlock()
