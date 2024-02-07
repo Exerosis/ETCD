@@ -349,7 +349,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		if other == address {
 			clients[i] = &LocalNode{rsRabia}
 		} else {
-			connection, reason := grpc.Dial(other, options...)
+			connection, reason := grpc.Dial(other+":56565", options...)
 			if reason != nil {
 				return nil, reason
 			}
@@ -357,7 +357,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		}
 	}
 	go func() {
-		listener, reason := net.Listen("tcp", address)
+		listener, reason := net.Listen("tcp", address+":56565")
 		if reason != nil {
 			panic(reason)
 		}
