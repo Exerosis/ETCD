@@ -324,6 +324,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			}
 		}(i, client)
 	}
+	println("About to wait")
 	group.Wait()
 
 	println("going to reconstruct")
