@@ -617,8 +617,6 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		for _, d := range addresses {
 			for _, node := range NODES {
-				println("D: ", d.String())
-				println("Node: ", node)
 				if strings.HasPrefix(d.String(), node) {
 					device = d
 					network = i
