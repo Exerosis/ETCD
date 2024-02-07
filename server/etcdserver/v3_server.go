@@ -307,6 +307,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	id, err := strconv.ParseUint(split[1], 10, 64)
 
 	var slot = s.rsRabia.slots.WaitFor(id)
+	println("Looking for parts of slot: ", slot)
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS)
