@@ -282,7 +282,6 @@ type RsRabia struct {
 }
 
 func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
-	println("Someone requested slot: ", in.Slot)
 	var options = mvcc.RangeOptions{}
 	trace := traceutil.Get(context.Background())
 	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)

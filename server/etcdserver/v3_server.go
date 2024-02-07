@@ -302,12 +302,12 @@ var waited uint32 = 0
 var finished uint32 = 0
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	println("\nRabia Read")
+
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
 
 	var slot = s.rsRabia.keys.WaitFor(id)
-	println("Looking for parts of slot: ", slot)
+	println("\nRabia Read: ", slot)
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS)
@@ -316,20 +316,18 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	for i, client := range s.rsRabia.clients {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(context.Background(), request)
-			println("Got response from: ", i)
 			if err != nil {
 				panic(err)
 			}
 			segments[i] = response.Value
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+				println("Got response from: ", i)
 				group.Done()
 			}
 		}(i, client)
 	}
-	println("About to wait")
 	group.Wait()
 
-	println("going to reconstruct")
 	err = s.rsRabia.encoder.ReconstructData(segments)
 	if err != nil {
 		println("too few shards ig? ", err)
@@ -340,6 +338,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
+	println("Got length: ", length)
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,
