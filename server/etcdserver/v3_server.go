@@ -327,7 +327,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		}(i, client)
 	}
 	group.Wait()
-
+	print("total count: ", atomic.LoadUint32(&count))
 	err = s.rsRabia.encoder.ReconstructData(segments)
 	if err != nil {
 		println("too few shards ig? ", err)
