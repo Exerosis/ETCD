@@ -25,7 +25,10 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
+	"github.com/exerosis/RabiaGo/rpc"
 	"github.com/klauspost/reedsolomon"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"math"
 	"math/rand"
 	"net"
@@ -256,6 +259,9 @@ type RsReadResponses struct {
 	cond      *sync.Cond
 }
 type RsRabia struct {
+	rpc.UnimplementedNodeServer
+	clients         []rpc.NodeClient
+	server          *EtcdServer
 	rabia           rabia.Node
 	encoder         reedsolomon.Encoder
 	keys            *rabia.BlockingMap[uint64, uint64]
@@ -266,6 +272,31 @@ type RsRabia struct {
 	reader          rabia.Connection
 	readersInbound  []rabia.Connection
 	readersOutbound []rabia.Connection
+}
+
+func (rabia *RsRabia) Read(ctx context.Context, in *rpc.ReadRequest) (*rpc.ReadResponse, error) {
+	var options = mvcc.RangeOptions{}
+	trace := traceutil.Get(context.Background())
+	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	defer read.End()
+	var key = make([]byte, 8)
+	binary.LittleEndian.PutUint64(key, in.Slot)
+	result, err := read.Range(ctx, key, nil, options)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.KVs) < 1 {
+		return nil, os.ErrInvalid
+	}
+	return &rpc.ReadResponse{Value: result.KVs[0].Value}, nil
+}
+
+type LocalNode struct {
+	rabia *RsRabia
+}
+
+func (node *LocalNode) Read(ctx context.Context, in *rpc.ReadRequest, opts ...grpc.CallOption) (*rpc.ReadResponse, error) {
+	return node.rabia.Read(ctx, in)
 }
 
 func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
@@ -281,9 +312,8 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 			others = append(others, other)
 		}
 	}
-	readersInbound, readersOutbound, err := rabia.GroupSet(address, 2002, others...)
-	println("Connected readers")
-	var reader = rabia.Multicaster(readersOutbound...)
+
+	var clients = make([]rpc.NodeClient, len(others)+1)
 
 	if err != nil {
 		return nil, err
@@ -293,91 +323,43 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		return nil, err
 	}
 	var rsRabia = &RsRabia{
-		rabia:           node,
-		encoder:         encoder,
-		keys:            rabia.NewBlockingMap[uint64, uint64](),
-		requests:        rabia.NewBlockingMap[uint64, uint64](),
-		slots:           rabia.NewBlockingMap[uint64, uint64](),
-		responses:       make(map[uint64]*RsReadResponses),
-		responsesLock:   sync.RWMutex{},
-		reader:          reader,
-		readersOutbound: readersOutbound,
-		readersInbound:  readersInbound,
+		clients:       clients,
+		server:        e,
+		rabia:         node,
+		encoder:       encoder,
+		keys:          rabia.NewBlockingMap[uint64, uint64](),
+		requests:      rabia.NewBlockingMap[uint64, uint64](),
+		slots:         rabia.NewBlockingMap[uint64, uint64](),
+		responses:     make(map[uint64]*RsReadResponses),
+		responsesLock: sync.RWMutex{},
 	}
-	for _, connection := range readersOutbound {
-		connection := connection
-		go func() {
-			var header = make([]byte, 12)
-			for {
-				err := connection.Read(header)
-				if err != nil {
-					panic(err)
-				}
-				var slot = binary.LittleEndian.Uint64(header[:])
-				var length = binary.LittleEndian.Uint32(header[8:])
-				println("Slot: ", slot)
-				println("Length: ", length)
-				var value = make([]byte, length)
-				err = connection.Read(value)
-				if err != nil {
-					panic(err)
-				}
-				var index = binary.LittleEndian.Uint16(value)
-				rsRabia.responsesLock.RLock()
-				responses, present := rsRabia.responses[slot]
-				rsRabia.responsesLock.RUnlock()
-				if present {
-					responses.cond.L.Lock()
-					responses.responses[index] = value
-					responses.count++
-					if responses.count >= SEGMENTS+PARITY-1 {
-						responses.cond.Broadcast()
-					}
-					responses.cond.L.Unlock()
-				}
-			}
-		}()
-	}
-	for i, connection := range readersInbound {
-		connection := connection
-		i := i
-		go func() {
-			var header = make([]byte, 8)
-			var response = make([]byte, 12)
-			for {
-				err := connection.Read(header)
-				if err != nil {
-					panic(err)
-				}
-				var slot = binary.LittleEndian.Uint64(header)
-				println("Asked about slot: ", slot)
-				var key = rsRabia.slots.WaitFor(slot)
-				binary.LittleEndian.PutUint64(header, key)
-				var options = mvcc.RangeOptions{}
-				trace := traceutil.Get(context.Background())
-				var read = e.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-				result, err := read.Range(context.Background(), header, nil, options)
-				read.End()
-				if err != nil {
-					panic(err)
-				}
-				if len(result.KVs) < 1 {
-					binary.LittleEndian.PutUint64(response[:], slot)
-					binary.LittleEndian.PutUint32(response[8:], 0)
-					panic("We have a tag for data that ETCD isn't storing!")
-				} else {
-					binary.LittleEndian.PutUint64(response[:], slot)
-					binary.LittleEndian.PutUint32(response[8:], uint32(len(result.KVs[0].Value)))
-				}
 
-				err = readersInbound[i].Write(append(response, result.KVs[0].Value...))
-				println("Wrote out: ", slot)
-				if err != nil {
-					panic(err)
-				}
-			}
-		}()
+	var options = []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
 	}
+	for i, other := range addresses {
+		if other == address {
+			clients[i] = &LocalNode{rsRabia}
+		} else {
+			connection, reason := grpc.Dial(other, options...)
+			if reason != nil {
+				return nil, reason
+			}
+			clients[i] = rpc.NewNodeClient(connection)
+		}
+	}
+	go func() {
+		listener, reason := net.Listen("tcp", address)
+		if reason != nil {
+			panic(reason)
+		}
+		server := grpc.NewServer()
+		rpc.RegisterNodeServer(server, rsRabia)
+		if reason := server.Serve(listener); reason != nil {
+			panic(reason)
+		}
+	}()
 	return rsRabia, nil
 }
 

@@ -19,8 +19,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
+	"github.com/exerosis/RabiaGo/rpc"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
@@ -278,14 +278,8 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
-	var finals = make([][]byte, SEGMENTS+PARITY)
-	for i := range finals {
-		var index = make([]byte, 2)
-		binary.LittleEndian.PutUint16(index, uint16(i))
-		finals[i] = append(index, segments[i]...)
-	}
 	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.ProposeEach(id, finals)
+	err = s.rsRabia.rabia.ProposeEach(id, segments)
 	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
@@ -311,103 +305,44 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	println("\nRabia Read")
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	println("Waiting for slot")
-	var slot = s.rsRabia.keys.WaitFor(id)
-	fmt.Printf("Got slot: %d\n", slot)
-	s.rsRabia.responsesLock.Lock()
-	var mutex = sync.Mutex{}
-	var responses = &RsReadResponses{
-		responses: make([][]byte, SEGMENTS+PARITY),
-		cond:      sync.NewCond(&mutex),
-	}
-	for i := 0; i < SEGMENTS+PARITY; i++ {
-		responses.responses[i] = nil
-	}
-	s.rsRabia.responses[slot] = responses
-	s.rsRabia.responsesLock.Unlock()
-	var buffer = make([]byte, 8)
-	binary.LittleEndian.PutUint64(buffer, slot)
-	println("Writing to reader")
-	err = s.rsRabia.reader.Write(buffer)
-	if err != nil {
-		return nil, err
-	}
-	println("Response Lock")
-	responses.cond.L.Lock()
-	for responses.count < SEGMENTS {
-		println("Response wait")
-		responses.cond.Wait()
-	}
-	println("Received responses")
-	var segments = make([][]byte, SEGMENTS+PARITY)
-	for i := 0; i < SEGMENTS+PARITY; i++ {
-		var response = responses.responses[i]
-		if response != nil {
-			if len(response) == 0 {
-				println("Found bad lengther")
-				var kvs = []*mvccpb.KeyValue{{
-					Key:            r.Key,
-					CreateRevision: 0,
-					ModRevision:    0,
-					Version:        0,
-					Value:          make([]byte, 0),
-					Lease:          0,
-				}}
-				return &pb.RangeResponse{
-					Header: &pb.ResponseHeader{},
-					Kvs:    kvs,
-				}, nil
-			} else {
-				var index = binary.LittleEndian.Uint16(response)
-				segments[index] = response[2:]
-			}
-		}
-	}
 
-	var key = s.rsRabia.slots.WaitFor(slot)
-	var header = make([]byte, 8)
-	binary.LittleEndian.PutUint64(header, key)
-	var options = mvcc.RangeOptions{}
-	trace := traceutil.Get(context.Background())
-	var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	result, err := read.Range(context.Background(), header, nil, options)
-	read.End()
-	if err != nil {
-		panic(err)
+	var slot = s.rsRabia.slots.WaitFor(id)
+	var segments = make([][]byte, SEGMENTS+PARITY)
+	var group sync.WaitGroup
+	group.Add(SEGMENTS)
+	var count = uint32(0)
+	var request = &rpc.ReadRequest{Slot: slot}
+	for i, client := range s.rsRabia.clients {
+		go func(i int, client rpc.NodeClient) {
+			response, err := client.Read(ctx, request)
+			if err != nil {
+				panic(err)
+			}
+			segments[i] = response.Value
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+				group.Done()
+			}
+		}(i, client)
 	}
-	var index = binary.LittleEndian.Uint16(result.KVs[0].Value)
-	segments[index] = result.KVs[0].Value[2:]
+	group.Wait()
 
 	println("going to reconstruct")
-	err = s.rsRabia.encoder.Reconstruct(segments)
+	err = s.rsRabia.encoder.ReconstructData(segments)
 	if err != nil {
 		println("too few shards ig? ", err)
 		return nil, err
 	}
-
 	var combinedData []byte
 	for i := 0; i < SEGMENTS; i++ {
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
-	println("Read length: ", length)
-	//put everything together
-	responses.cond.L.Unlock()
-	s.rsRabia.responsesLock.Lock()
-	delete(s.rsRabia.responses, slot)
-	s.rsRabia.responsesLock.Unlock()
-	println("Reconstructed data")
-	atomic.AddUint32(&finished, 1)
-	println("Finished: ", atomic.LoadUint32(&finished))
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          combinedData[4:],
+		Value:          combinedData[4:length],
 		Lease:          0,
 	}}
 	return &pb.RangeResponse{
