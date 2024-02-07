@@ -232,13 +232,22 @@ func LoadInt(name string) int {
 	return int(i)
 }
 
+func LoadAddresses(name string) []string {
+	env := os.Getenv(name)
+	nodes := strings.Split(env, ",")
+	for i, node := range nodes {
+		nodes[i] = strings.TrimSpace(node)
+	}
+	return nodes
+}
+
 var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
-var NODES = LoadInt("NODES")
+var NODES = LoadAddresses("NODES")
 var FAILURES = LoadInt("FAILURES")
-var SEGMENTS = NODES - FAILURES
+var SEGMENTS = len(NODES) - FAILURES
 var PARITY = FAILURES
 
 type RsReadResponses struct {

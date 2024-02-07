@@ -43,7 +43,7 @@ require (
 	golang.org/x/net v0.18.0
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17
-	google.golang.org/grpc v1.61.0
+	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	sigs.k8s.io/yaml v1.3.0
