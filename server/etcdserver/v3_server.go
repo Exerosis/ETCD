@@ -319,8 +319,8 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			if err != nil {
 				panic(err)
 			}
-			segments[i] = response.Value
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+				segments[i] = response.Value
 				println("Got response from: ", i)
 				group.Done()
 			}
