@@ -610,6 +610,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		for _, d := range addresses {
 			for _, node := range NODES {
+				print("D: ", d)
+				print("Node: ", node)
 				if node == d.String() {
 					device = d
 					network = i
