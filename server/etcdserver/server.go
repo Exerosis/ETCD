@@ -627,9 +627,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(reason)
 		}
 		for _, d := range addresses {
-			if strings.Contains(d.String(), "10.10.1.") {
-				device = d
-				network = i
+			for _, node := range NODES {
+				if node == d.String() {
+					device = d
+					network = i
+					break
+				}
 			}
 		}
 	}
@@ -642,19 +645,6 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	var address = strings.Split(device.String(), "/")[0]
 	var local = fmt.Sprintf("%s:%d", address, 2000)
-	addresses := make([]string, 0, PARITY+SEGMENTS)
-	for i := 0; i < PARITY+SEGMENTS; i++ {
-		// Increment the last digit of the base IP address
-		currentAddress := fmt.Sprintf("10.10.1.%d", i+1)
-		if RS_PAXOS {
-			currentAddress = fmt.Sprintf("10.10.1.%d:%d", i+1, 2000)
-		}
-
-		if !RS_PAXOS && RS_RABIA || RS_PAXOS && currentAddress != local {
-			fmt.Printf("Adding address: %s", currentAddress)
-			addresses = append(addresses, currentAddress)
-		}
-	}
 
 	fmt.Printf("Local: %s", address)
 
@@ -725,7 +715,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		srv.paxos = paxos.Node{
 			Clients: make([]paxos.Client, 0),
 			Encoder: encoder,
-			Total:   len(addresses) + 1,
+			Total:   len(NODES),
 			Log: paxos.Log{
 				Lock:    &sync.Mutex{},
 				Entries: make(map[uint32]*paxos.Entry),
@@ -733,7 +723,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		go func() {
 			println("RS-PAXOS: ACCEPTING")
-			err := srv.paxos.Accept(local, func(key []byte, value []byte) {
+			err := srv.paxos.Accept(address, func(key []byte, value []byte) {
 				trace := traceutil.Get(context.TODO())
 				var write = srv.KV().Write(trace)
 				write.Put(key, value, 0)
@@ -743,7 +733,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				panic(err)
 			}
 		}()
-		err = srv.paxos.Connect(addresses, func(key []byte, value []byte) {
+		err = srv.paxos.Connect(address, NODES, func(key []byte, value []byte) {
 			trace := traceutil.Get(context.Background())
 			var write = srv.KV().Write(trace)
 			write.Put(key, value, 0)
@@ -772,7 +762,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		//then sets up cas bs which I can explain later
 		var factory = func() *EtcdCas { return &EtcdCas{} }
 		//makes the node
-		srv.pineapple = pineapple.NewNode(storage, local, addresses, factory)
+		srv.pineapple = pineapple.NewNode(storage, local, NODES, factory)
 		go func() {
 			//starts the pinapple process
 			reason := srv.pineapple.Run()
@@ -787,7 +777,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RS_RABIA {
-		node, err := NewRsRabia(srv, address, addresses, 5600)
+		node, err := NewRsRabia(srv, address, NODES, 5600)
 		if err != nil {
 			panic(err)
 		}
