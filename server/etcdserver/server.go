@@ -288,7 +288,7 @@ func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rab
 	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
 	var key = make([]byte, 8)
-	binary.LittleEndian.PutUint64(key, in.Slot)
+	binary.LittleEndian.PutUint64(key, rabia.slots.WaitFor(in.Slot))
 	result, err := read.Range(ctx, key, nil, options)
 	if err != nil {
 		return nil, err
