@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/exerosis/RabiaGo/rabia"
-	"github.com/exerosis/RabiaGo/rpc"
+	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
@@ -311,9 +311,9 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	var group sync.WaitGroup
 	group.Add(SEGMENTS)
 	var count = uint32(0)
-	var request = &rpc.ReadRequest{Slot: slot}
+	var request = &rabia_rpc.ReadRequest{Slot: slot}
 	for i, client := range s.rsRabia.clients {
-		go func(i int, client rpc.NodeClient) {
+		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(ctx, request)
 			if err != nil {
 				panic(err)

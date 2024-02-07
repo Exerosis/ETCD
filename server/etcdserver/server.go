@@ -25,7 +25,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
-	"github.com/exerosis/RabiaGo/rpc"
+	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -259,8 +259,8 @@ type RsReadResponses struct {
 	cond      *sync.Cond
 }
 type RsRabia struct {
-	rpc.UnimplementedNodeServer
-	clients         []rpc.NodeClient
+	rabia_rpc.UnimplementedNodeServer
+	clients         []rabia_rpc.NodeClient
 	server          *EtcdServer
 	rabia           rabia.Node
 	encoder         reedsolomon.Encoder
@@ -274,7 +274,7 @@ type RsRabia struct {
 	readersOutbound []rabia.Connection
 }
 
-func (rabia *RsRabia) Read(ctx context.Context, in *rpc.ReadRequest) (*rpc.ReadResponse, error) {
+func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
 	var options = mvcc.RangeOptions{}
 	trace := traceutil.Get(context.Background())
 	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
@@ -288,14 +288,14 @@ func (rabia *RsRabia) Read(ctx context.Context, in *rpc.ReadRequest) (*rpc.ReadR
 	if len(result.KVs) < 1 {
 		return nil, os.ErrInvalid
 	}
-	return &rpc.ReadResponse{Value: result.KVs[0].Value}, nil
+	return &rabia_rpc.ReadResponse{Value: result.KVs[0].Value}, nil
 }
 
 type LocalNode struct {
 	rabia *RsRabia
 }
 
-func (node *LocalNode) Read(ctx context.Context, in *rpc.ReadRequest, opts ...grpc.CallOption) (*rpc.ReadResponse, error) {
+func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts ...grpc.CallOption) (*rabia_rpc.ReadResponse, error) {
 	return node.rabia.Read(ctx, in)
 }
 
@@ -313,7 +313,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		}
 	}
 
-	var clients = make([]rpc.NodeClient, len(others)+1)
+	var clients = make([]rabia_rpc.NodeClient, len(others)+1)
 
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 			if reason != nil {
 				return nil, reason
 			}
-			clients[i] = rpc.NewNodeClient(connection)
+			clients[i] = rabia_rpc.NewNodeClient(connection)
 		}
 	}
 	go func() {
@@ -355,7 +355,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 			panic(reason)
 		}
 		server := grpc.NewServer()
-		rpc.RegisterNodeServer(server, rsRabia)
+		rabia_rpc.RegisterNodeServer(server, rsRabia)
 		if reason := server.Serve(listener); reason != nil {
 			panic(reason)
 		}
