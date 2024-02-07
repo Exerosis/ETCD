@@ -237,6 +237,7 @@ func LoadInt(name string) int {
 
 func LoadAddresses(name string) []string {
 	env := os.Getenv(name)
+	println("ALL NODES: ", env)
 	nodes := strings.Split(env, ",")
 	for i, node := range nodes {
 		nodes[i] = strings.TrimSpace(node)
