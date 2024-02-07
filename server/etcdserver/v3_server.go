@@ -315,6 +315,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	for i, client := range s.rsRabia.clients {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(ctx, request)
+			println("Got response from: ", i)
 			if err != nil {
 				panic(err)
 			}
