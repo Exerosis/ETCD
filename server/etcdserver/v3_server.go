@@ -338,7 +338,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
-	println("Got length: ", length)
+	println("Got length: ", length, " vs ", len(combinedData[4:]))
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,
