@@ -345,17 +345,6 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	}
-	for i, other := range addresses {
-		if other == address {
-			clients[i] = &LocalNode{rsRabia}
-		} else {
-			connection, reason := grpc.Dial(other+":56565", options...)
-			if reason != nil {
-				return nil, reason
-			}
-			clients[i] = rabia_rpc.NewNodeClient(connection)
-		}
-	}
 	go func() {
 		listener, reason := net.Listen("tcp", address+":56565")
 		if reason != nil {
@@ -367,6 +356,17 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint
 			panic(reason)
 		}
 	}()
+	for i, other := range addresses {
+		if other == address {
+			clients[i] = &LocalNode{rsRabia}
+		} else {
+			connection, reason := grpc.Dial(other+":56565", options...)
+			if reason != nil {
+				return nil, reason
+			}
+			clients[i] = rabia_rpc.NewNodeClient(connection)
+		}
+	}
 	return rsRabia, nil
 }
 
