@@ -249,7 +249,13 @@ var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
-var NODES = LoadAddresses("NODES")
+var NODES = []string{
+	"10.10.1.1",
+	"10.10.1.2",
+	"10.10.1.3",
+	"10.10.1.4",
+	"10.10.1.5",
+}
 var FAILURES = LoadInt("FAILURES")
 var SEGMENTS = len(NODES) - FAILURES
 var PARITY = FAILURES
