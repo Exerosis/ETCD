@@ -347,6 +347,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		Value:          combinedData[4:],
 		Lease:          0,
 	}}
+	println("Finished: ", atomic.AddUint32(&finished, 1))
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
 		Kvs:    kvs,
