@@ -220,6 +220,7 @@ type Server interface {
 func LoadEnv(name string) bool {
 	s := os.Getenv(name)
 	i, err := strconv.ParseBool(s)
+	fmt.Printf("Result: %s - %t", name, i)
 	if nil != err {
 		return false
 	}
