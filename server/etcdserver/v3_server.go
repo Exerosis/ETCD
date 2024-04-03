@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
@@ -248,13 +249,12 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	println("\nRabia Put")
 	var split = strings.Split(string(r.Key), "usertable:user")
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
-	println("Original Length: ", len(r.Value))
 	var data = append(length, r.Value...)
 	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
-	println("Original Segment size: ", segmentSize+2)
 	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
 	var startIndex = 0
 
@@ -278,12 +278,17 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
+	fmt.Printf("encoded: %d", id)
 	s.rsRabia.requests.Delete(id)
+	fmt.Printf("delete: %d", id)
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
+	fmt.Printf("proposed each: %d", id)
 	s.rsRabia.requests.WaitFor(id)
+	fmt.Printf("wait for: %d", id)
 	if err != nil {
 		return nil, err
 	}
+
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
