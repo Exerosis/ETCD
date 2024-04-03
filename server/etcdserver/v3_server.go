@@ -278,13 +278,13 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for !rabia.IsValid(id) {
 		return nil, errors.ErrKeyNotFound
 	}
-	fmt.Printf("encoded: %d", id)
+	fmt.Printf("encoded: %d\n", id)
 	s.rsRabia.requests.Delete(id)
-	fmt.Printf("delete: %d", id)
+	fmt.Printf("delete: %d\n", id)
 	err = s.rsRabia.rabia.ProposeEach(id, segments)
-	fmt.Printf("proposed each: %d", id)
+	fmt.Printf("proposed each: %d\n", id)
 	s.rsRabia.requests.WaitFor(id)
-	fmt.Printf("wait for: %d", id)
+	fmt.Printf("wait for: %d\n", id)
 	if err != nil {
 		return nil, err
 	}
