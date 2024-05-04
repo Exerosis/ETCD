@@ -36,6 +36,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -302,10 +303,8 @@ func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts
 }
 
 func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
+	sort.Sort(sort.StringSlice(addresses))
 	println("starting")
-	println(FAILURES)
-	println(SEGMENTS)
-	println(PARITY)
 	for _, s := range addresses {
 		println(s)
 	}
