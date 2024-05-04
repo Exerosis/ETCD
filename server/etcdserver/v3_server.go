@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
@@ -339,6 +340,13 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
+
+	var it map[string][]byte
+	err = json.NewDecoder(bytes.NewReader(combinedData[4:length])).Decode(&it)
+	if err != nil {
+		println(string(combinedData[4:length]))
+	}
+
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
 		CreateRevision: 0,
