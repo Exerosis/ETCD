@@ -343,7 +343,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
 
 	var it map[string][]byte
-	err = json.NewDecoder(bytes.NewReader(combinedData[4:length])).Decode(&it)
+	err = json.NewDecoder(bytes.NewReader(combinedData[4:])).Decode(&it)
 	if err != nil {
 		println(string(combinedData[4:length]))
 	}
