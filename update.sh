@@ -43,7 +43,7 @@ else
 fi
 
 if [ "$1" = "" ]; then
-  export SETUP="--initial-cluster node-1=http://10.10.1.1:12380,node-2=http://10.10.1.2:12380,node-3=http://10.10.1.3:12380,node-4=http://10.10.1.4:12380"
+  export SETUP="--initial-cluster node-1=http://10.10.1.1:12380,node-2=http://10.10.1.2:12380,node-3=http://10.10.1.3:12380"
 fi
 
 sudo rm -rf "$HOST.etcd"

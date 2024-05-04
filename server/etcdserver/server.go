@@ -244,6 +244,7 @@ func LoadAddresses(name string) []string {
 	for i, node := range nodes {
 		nodes[i] = strings.TrimSpace(node)
 	}
+	sort.Sort(sort.StringSlice(nodes))
 	return nodes
 }
 
@@ -748,7 +749,11 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		//then sets up cas bs which I can explain later
 		var factory = func() *EtcdCas { return &EtcdCas{} }
 		//makes the node
-		srv.pineapple = pineapple.NewNode(storage, local, NODES, factory)
+		var addresses = make([]string, len(NODES))
+		for i := 0; i < len(NODES); i++ {
+			addresses[i] = fmt.Sprintf("%s:25565", NODES[i])
+		}
+		srv.pineapple = pineapple.NewNode(storage, local, addresses, factory)
 		go func() {
 			//starts the pinapple process
 			reason := srv.pineapple.Run()
