@@ -304,7 +304,6 @@ var waited uint32 = 0
 var finished uint32 = 0
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	println("Next read")
 	var split = strings.Split(string(r.Key), "usertable:user")
 	id, err := strconv.ParseUint(split[1], 10, 64)
 
