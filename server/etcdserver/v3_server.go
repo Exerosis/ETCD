@@ -344,7 +344,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		CreateRevision: 0,
 		ModRevision:    0,
 		Version:        0,
-		Value:          combinedData[4:],
+		Value:          combinedData[4:length],
 		Lease:          0,
 	}}
 	println("Finished: ", atomic.AddUint32(&finished, 1))
