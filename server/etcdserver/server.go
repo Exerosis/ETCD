@@ -251,7 +251,7 @@ var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
-var FAILURES = LoadInt("FAILURES")
+var FAILURES = 1
 var SEGMENTS = len(NODES) - FAILURES
 var PARITY = FAILURES
 
