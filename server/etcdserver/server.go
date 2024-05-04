@@ -751,9 +751,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		//makes the node
 		var addresses = make([]string, len(NODES))
 		for i := 0; i < len(NODES); i++ {
-			addresses[i] = fmt.Sprintf("%s:2000", NODES[i])
+			addresses[i] = fmt.Sprintf("%s:25565", NODES[i])
 		}
-		srv.pineapple = pineapple.NewNode(storage, local, addresses, factory)
+		srv.pineapple = pineapple.NewNode(storage, fmt.Sprintf("%s:25565", address), addresses, factory)
 		go func() {
 			//starts the pinapple process
 			reason := srv.pineapple.Run()
