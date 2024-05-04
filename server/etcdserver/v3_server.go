@@ -253,7 +253,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	var split = strings.Split(string(r.Key), "usertable:user")
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
-	println(string(r.Value))
+	//println(string(r.Value))
 	var data = append(length, r.Value...)
 	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
 	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
@@ -344,7 +344,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 
 	var it map[string][]byte
 	err = json.NewDecoder(bytes.NewReader(combinedData[4:length])).Decode(&it)
-	if err == nil {
+	if err != nil {
 		println(string(combinedData[4:length]))
 	}
 
