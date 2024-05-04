@@ -27,6 +27,7 @@ import (
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"math"
 	"math/rand"
