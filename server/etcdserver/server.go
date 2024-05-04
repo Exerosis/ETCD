@@ -631,7 +631,6 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	fmt.Printf("Address: %s\n", device)
 
 	var address = strings.Split(device.String(), "/")[0]
-	var local = fmt.Sprintf("%s:%d", address, 2000)
 
 	fmt.Printf("Local: %s", address)
 
