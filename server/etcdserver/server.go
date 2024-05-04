@@ -22,7 +22,6 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/Bompedy/RS-Paxos/paxos"
-	"github.com/dustin/go-humanize"
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
@@ -303,6 +302,9 @@ func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts
 
 func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
 	println("starting")
+	println(FAILURES)
+	println(SEGMENTS)
+	println(PARITY)
 	for _, s := range addresses {
 		println(s)
 	}
