@@ -304,13 +304,13 @@ func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts
 	return node.rabia.Read(ctx, in)
 }
 
-func NewRsRabia(e *EtcdServer, address string, addresses []string, pipes ...uint16) (*RsRabia, error) {
+func NewRsRabia(e *EtcdServer, address string, addresses []string, f uint16, pipes ...uint16) (*RsRabia, error) {
 	sort.Sort(sort.StringSlice(addresses))
 	println("starting")
 	for _, s := range addresses {
 		println(s)
 	}
-	node, err := rabia.MakeNode(address, addresses, pipes...)
+	node, err := rabia.MakeNode(address, addresses, f, pipes...)
 	println("made node")
 	var others []string
 	for _, other := range addresses {
@@ -771,7 +771,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RS_RABIA {
-		node, err := NewRsRabia(srv, address, NODES, 50650)
+		node, err := NewRsRabia(srv, address, NODES, uint16(FAILURES), 50650)
 		if err != nil {
 			panic(err)
 		}
