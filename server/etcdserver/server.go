@@ -253,9 +253,10 @@ var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
-var FAILURES = 1
-var SEGMENTS = len(NODES) - FAILURES
-var PARITY = FAILURES
+var PARITY = LoadInt("PARITY")
+var FAILURES = (len(NODES) - PARITY) / 2
+var QUORUM = FAILURES + PARITY
+var SEGMENTS = len(NODES) - PARITY
 
 type RsReadResponses struct {
 	responses [][]byte
@@ -706,6 +707,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				Lock:    &sync.Mutex{},
 				Entries: make(map[uint32]*paxos.Entry),
 			},
+			Quorum:   QUORUM,
+			Parity:   PARITY,
+			Segments: SEGMENTS,
 		}
 		go func() {
 			println("RS-PAXOS: ACCEPTING")
