@@ -146,7 +146,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 }
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
-	s.paxos.Write(SEGMENTS, PARITY, r.Key, r.Value, func(key []byte, value []byte) {
+	s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
 		trace := traceutil.Get(context.TODO())
 		var write = s.KV().Write(trace)
 		write.Put(key, value, 0)
