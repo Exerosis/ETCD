@@ -256,7 +256,7 @@ var NODES = LoadAddresses("NODES")
 var PARITY = LoadInt("PARITY")
 var FAILURES = (len(NODES) - PARITY) / 2
 var SEGMENTS = len(NODES) - PARITY
-var QUORUM = SEGMENTS + PARITY // pass in segments later
+var QUORUM = SEGMENTS + FAILURES // pass in segments later
 
 type RsReadResponses struct {
 	responses [][]byte
