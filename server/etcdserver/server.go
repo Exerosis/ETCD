@@ -711,28 +711,28 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Parity:   PARITY,
 			Segments: SEGMENTS,
 		}
-		go func() {
-			println("RS-PAXOS: ACCEPTING")
-			err := srv.paxos.Accept(address, func(key []byte, value []byte) {
-				trace := traceutil.Get(context.TODO())
-				var write = srv.KV().Write(trace)
-				write.Put(key, value, 0)
-				write.End()
-			})
-			if err != nil {
-				panic(err)
-			}
-		}()
-		err = srv.paxos.Connect(address, NODES, func(key []byte, value []byte) {
-			trace := traceutil.Get(context.Background())
-			var write = srv.KV().Write(trace)
-			write.Put(key, value, 0)
-			write.End()
-		})
-
-		if err != nil {
-			panic(err)
-		}
+		//go func() {
+		//	println("RS-PAXOS: ACCEPTING")
+		//	err := srv.paxos.Accept(address, func(key []byte, value []byte) {
+		//		trace := traceutil.Get(context.TODO())
+		//		var write = srv.KV().Write(trace)
+		//		write.Put(key, value, 0)
+		//		write.End()
+		//	})
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//}()
+		//err = srv.paxos.Connect(address, NODES, func(key []byte, value []byte) {
+		//	trace := traceutil.Get(context.Background())
+		//	var write = srv.KV().Write(trace)
+		//	write.Put(key, value, 0)
+		//	write.End()
+		//})
+		//
+		//if err != nil {
+		//	panic(err)
+		//}
 		println("RS-PAXOS: CONNECTED")
 	} else if PINEAPPLE || MEMORY {
 		println("PINEAPPLE ENABLED (test mode)")
