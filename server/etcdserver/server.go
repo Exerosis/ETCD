@@ -253,9 +253,9 @@ var RS_RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
-var PARITY = LoadInt("PARITY")
-var FAILURES = (len(NODES) - PARITY) / 2
-var SEGMENTS = len(NODES) - PARITY
+var FAILURES = LoadInt("FAILURES")
+var SEGMENTS = LoadInt("SEGMENTS")
+var PARITY = len(NODES) - SEGMENTS
 var QUORUM = SEGMENTS + FAILURES // pass in segments later
 
 type RsReadResponses struct {
@@ -694,6 +694,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 
 	//if pineapple is selected on startup it runs this to start he node
 	if RS_PAXOS {
+		println("SEGMENTS, PARITY: ", SEGMENTS, PARITY)
 		encoder, err := reedsolomon.New(SEGMENTS, PARITY)
 		if err != nil {
 			panic("PROBLEM CREATING RS ENCODER")
