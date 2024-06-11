@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
@@ -147,9 +146,8 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 }
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
-	fmt.Println("Paxos Put")
+	//fmt.Println("Paxos Put")
 	s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
-		fmt.Println("Write Block")
 		trace := traceutil.Get(context.TODO())
 		var write = s.KV().Write(trace)
 		write.Put(key, value, 0)
