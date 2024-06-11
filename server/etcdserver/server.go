@@ -734,6 +734,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(err)
 		}
 		println("RS-PAXOS: CONNECTED")
+		println("Quorum: %d", QUORUM)
 	} else if PINEAPPLE || MEMORY {
 		println("PINEAPPLE ENABLED (test mode)")
 		var storage pineapple.Storage
