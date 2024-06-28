@@ -301,7 +301,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	var slot = s.racos.keys.WaitFor(string(r.Key))
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
-	group.Add(SEGMENTS + PARITY)
+	group.Add(SEGMENTS)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: slot}
 	for i, client := range s.racos.clients {
@@ -310,7 +310,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			if err != nil {
 				panic(err)
 			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
 				segments[i] = response.Value
 				println("Got response from: ", i)
 				group.Done()
@@ -398,7 +398,6 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if len(result.KVs) < 1 {
 		return nil, os.ErrInvalid
 	}
-	print(string(result.KVs[0].Value))
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
 		Kvs:    []*mvccpb.KeyValue{&result.KVs[0]},
