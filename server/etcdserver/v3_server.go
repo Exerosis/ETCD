@@ -24,6 +24,7 @@ import (
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
+	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -264,7 +265,7 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		startIndex = endIndex
 	}
 
-	err := s.rsRabia.encoder.Encode(segments)
+	err := s.racos.encoder.Encode(segments)
 	if err != nil {
 		panic(err)
 	}
@@ -276,9 +277,9 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	for i := range segments {
 		proposals[i] = append(header, segments[i]...)
 	}
-	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.ProposeEach(id, proposals)
-	s.rsRabia.requests.WaitFor(id)
+	s.racos.requests.Delete(id)
+	err = s.racos.rabia.ProposeEach(id, proposals)
+	s.racos.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
 	}
@@ -297,13 +298,13 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 }
 
 func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	var slot = s.rsRabia.keys.WaitFor(string(r.Key))
+	var slot = s.racos.keys.WaitFor(string(r.Key))
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS + PARITY)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: slot}
-	for i, client := range s.rsRabia.clients {
+	for i, client := range s.racos.clients {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(context.Background(), request)
 			if err != nil {
@@ -318,7 +319,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	group.Wait()
 	println("total count: ", atomic.LoadUint32(&count))
-	var err = s.rsRabia.encoder.ReconstructData(segments)
+	var err = s.racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +350,57 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
 		Kvs:    kvs,
+	}, nil
+}
+
+func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	var header = make([]byte, 4)
+	binary.LittleEndian.PutUint32(header, uint32(len(r.Key)))
+	var data = append(header, append(r.Key, r.Value...)...)
+	var id = rabia.RandomProposal()
+	s.rabia.requests.Delete(id)
+	var err = s.rabia.node.Propose(id, data)
+	if err != nil {
+		return nil, err
+	}
+	s.rabia.requests.WaitFor(id)
+	s.rabia.requests.Delete(id)
+	return &pb.PutResponse{
+		Header: &pb.ResponseHeader{},
+		PrevKv: &mvccpb.KeyValue{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          make([]byte, 0), //hence empty value here
+			Lease:          0,
+		},
+	}, nil
+}
+
+func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	var id = rabia.RandomProposal()
+	s.rabia.requests.Delete(id)
+	var err = s.rabia.node.Propose(id, []byte{0})
+	if err != nil {
+		return nil, err
+	}
+	s.rabia.requests.WaitFor(id)
+	s.rabia.requests.Delete(id)
+	var options = mvcc.RangeOptions{}
+	trace := traceutil.Get(context.Background())
+	var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	defer read.End()
+	result, err := read.Range(ctx, r.Key, nil, options)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.KVs) < 1 {
+		return nil, os.ErrInvalid
+	}
+	return &pb.RangeResponse{
+		Header: &pb.ResponseHeader{},
+		Kvs:    []*mvccpb.KeyValue{&result.KVs[0]},
 	}, nil
 }
 
@@ -409,7 +461,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	if MEMORY || PINEAPPLE {
 		return s.PineapplePut(ctx, r)
 	}
-	if RS_RABIA {
+	if RACOS {
 		return s.RacosPut(ctx, r)
 	}
 	return s.RaftPut(ctx, r)
@@ -434,7 +486,7 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	if MEMORY || PINEAPPLE {
 		return s.PineappleRange(ctx, r)
 	}
-	if RS_RABIA {
+	if RACOS {
 		return s.RacosRange(ctx, r)
 	}
 	return s.RaftRange(ctx, r)

@@ -249,7 +249,8 @@ func LoadAddresses(name string) []string {
 }
 
 var PINEAPPLE = LoadEnv("PINEAPPLE")
-var RS_RABIA = LoadEnv("RS_RABIA")
+var RACOS = LoadEnv("RACOS")
+var RABIA = LoadEnv("RS_RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
@@ -263,7 +264,7 @@ type RsReadResponses struct {
 	count     int
 	cond      *sync.Cond
 }
-type RsRabia struct {
+type Racos struct {
 	rabia_rpc.UnimplementedNodeServer
 	clients         []rabia_rpc.NodeClient
 	server          *EtcdServer
@@ -279,7 +280,7 @@ type RsRabia struct {
 	readersOutbound []rabia.Connection
 }
 
-func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
+func (rabia *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
 	var options = mvcc.RangeOptions{}
 	trace := traceutil.Get(context.Background())
 	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
@@ -296,14 +297,14 @@ func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rab
 }
 
 type LocalNode struct {
-	rabia *RsRabia
+	rabia *Racos
 }
 
 func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts ...grpc.CallOption) (*rabia_rpc.ReadResponse, error) {
 	return node.rabia.Read(ctx, in)
 }
 
-func NewRsRabia(e *EtcdServer, address string, addresses []string, f uint16, pipes ...uint16) (*RsRabia, error) {
+func NewRacos(e *EtcdServer, address string, addresses []string, f uint16, pipes ...uint16) (*Racos, error) {
 	sort.Sort(sort.StringSlice(addresses))
 	println("starting")
 	for _, s := range addresses {
@@ -327,7 +328,7 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, f uint16, pip
 	if err != nil {
 		return nil, err
 	}
-	var rsRabia = &RsRabia{
+	var rsRabia = &Racos{
 		clients:       clients,
 		server:        e,
 		rabia:         node,
@@ -368,6 +369,26 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, f uint16, pip
 	return rsRabia, nil
 }
 
+type Rabia struct {
+	node     rabia.Node
+	requests *rabia.BlockingMap[uint64, uint64]
+}
+
+func NewRabia(address string, addresses []string, f uint16, pipes ...uint16) (*Rabia, error) {
+	sort.Sort(sort.StringSlice(addresses))
+	for _, s := range addresses {
+		println(s)
+	}
+	node, err := rabia.MakeNode(address, addresses, f, pipes...)
+	if err != nil {
+		return nil, err
+	}
+	return &Rabia{
+		node:     node,
+		requests: rabia.NewBlockingMap[uint64, uint64](),
+	}, nil
+}
+
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
 	// inflightSnapshots holds count the number of snapshots currently inflight.
@@ -380,7 +401,8 @@ type EtcdServer struct {
 	consistIndex cindex.ConsistentIndexer // consistIndex is used to get/set/save consistentIndex
 	r            raftNode                 // uses 64-bit atomics; keep 64-bit aligned.
 	pineapple    pineapple.Node[*EtcdCas]
-	rsRabia      *RsRabia
+	racos        *Racos
+	rabia        *Rabia
 	readych      chan struct{}
 	Cfg          config.ServerConfig
 
@@ -771,12 +793,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic(reason)
 		}
 		println("Connected")
-	} else if RS_RABIA {
-		node, err := NewRsRabia(srv, address, NODES, uint16(FAILURES), 50650)
+	} else if RACOS {
+		node, err := NewRacos(srv, address, NODES, uint16(FAILURES), 50650)
 		if err != nil {
 			panic(err)
 		}
-		srv.rsRabia = node
+		srv.racos = node
 		go func() {
 			err := node.rabia.Run()
 			if err != nil {
@@ -802,7 +824,41 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				}
 			}
 		}()
-		println("RS RABIA ENABLED ")
+		println("RACOS ENABLED ")
+	} else if RABIA {
+		node, err := NewRabia(address, NODES, uint16(FAILURES), 50650)
+		if err != nil {
+			panic(err)
+		}
+		srv.rabia = node
+		go func() {
+			err := node.node.Run()
+			if err != nil {
+				panic(err)
+			}
+		}()
+		go func() {
+			for {
+				err := node.node.Consume(func(i uint64, id uint64, data []byte) error {
+					if data[0] == 0 {
+						node.requests.Set(id, id)
+						return nil
+					}
+					var length = binary.LittleEndian.Uint32(data)
+					var key = data[4 : length+4]
+					trace := traceutil.Get(context.Background())
+					var write = srv.KV().Write(trace)
+					write.Put(key, data[length+4:], 0)
+					write.End()
+					node.requests.Set(id, id)
+					return nil
+				})
+				if err != nil {
+					panic(err)
+				}
+			}
+		}()
+		println("RABIA ENABLED ")
 	} else {
 		println("RAFT ENABLED")
 	}
