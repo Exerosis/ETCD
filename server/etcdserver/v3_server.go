@@ -24,7 +24,6 @@ import (
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
-	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -315,7 +314,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
 				var length = binary.LittleEndian.Uint32(response.Value)
 				var key = response.Value[4 : length+4]
-				if !slices.Equal(key, r.Key) {
+				if !bytes.Equal(key, r.Key) {
 					panic("Reading another keys data!")
 				}
 				segments[i] = response.Value[length+4:]
