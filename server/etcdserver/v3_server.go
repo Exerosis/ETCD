@@ -465,6 +465,9 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	if RACOS {
 		return s.RacosPut(ctx, r)
 	}
+	if RABIA {
+		return s.RabiaPut(ctx, r)
+	}
 	return s.RaftPut(ctx, r)
 }
 
@@ -489,6 +492,9 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	}
 	if RACOS {
 		return s.RacosRange(ctx, r)
+	}
+	if RABIA {
+		return s.RabiaRange(ctx, r)
 	}
 	return s.RaftRange(ctx, r)
 }
