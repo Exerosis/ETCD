@@ -250,7 +250,7 @@ func LoadAddresses(name string) []string {
 
 var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RACOS = LoadEnv("RACOS")
-var RABIA = LoadEnv("RS_RABIA")
+var RABIA = LoadEnv("RABIA")
 var MEMORY = LoadEnv("PINEAPPLE_MEMORY")
 var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
