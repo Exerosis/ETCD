@@ -337,7 +337,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
 	if length != uint32(len(combinedData[4:])) {
-		print("big problem lets add more debug later")
+		println(string(combinedData[4:]))
 	}
 
 	//var it map[string][]byte
