@@ -319,7 +319,14 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	group.Wait()
 	println("total count: ", atomic.LoadUint32(&count))
-	var err = s.racos.encoder.ReconstructData(segments)
+	var err = s.racos.encoder.Reconstruct(segments)
+	verify, err := s.racos.encoder.Verify(segments)
+	if err != nil {
+		return nil, err
+	}
+	if !verify {
+		println("UNVERIFIED")
+	}
 	if err != nil {
 		return nil, err
 	}
