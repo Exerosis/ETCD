@@ -248,7 +248,6 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 }
 
 func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	println("\nRacos Put")
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
 	var data = append(length, r.Value...)
@@ -299,7 +298,6 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 
 func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	var slot = s.rsRabia.keys.WaitFor(string(r.Key))
-	println("\nRacos Read: ", slot)
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS + PARITY)
@@ -312,12 +310,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 				panic(err)
 			}
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
-				var length = binary.LittleEndian.Uint32(response.Value)
-				var key = response.Value[4 : length+4]
-				if !bytes.Equal(key, r.Key) {
-					panic("Reading another keys data!")
-				}
-				segments[i] = response.Value[length+4:]
+				segments[i] = response.Value
 				println("Got response from: ", i)
 				group.Done()
 			}
