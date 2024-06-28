@@ -301,7 +301,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	var slot = s.racos.keys.WaitFor(string(r.Key))
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
-	group.Add(SEGMENTS)
+	group.Add(SEGMENTS + PARITY)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: slot}
 	for i, client := range s.racos.clients {
@@ -310,7 +310,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			if err != nil {
 				panic(err)
 			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
 				segments[i] = response.Value
 				println("Got response from: ", i)
 				group.Done()
@@ -319,14 +319,7 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	group.Wait()
 	println("total count: ", atomic.LoadUint32(&count))
-	var err = s.racos.encoder.Reconstruct(segments)
-	verify, err := s.racos.encoder.Verify(segments)
-	if err != nil {
-		return nil, err
-	}
-	if !verify {
-		println("UNVERIFIED")
-	}
+	var err = s.racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
 	}
