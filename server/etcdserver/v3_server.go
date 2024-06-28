@@ -24,7 +24,6 @@ import (
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
-	"math/rand"
 	"slices"
 	"strconv"
 	"sync"
@@ -272,12 +271,7 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		panic(err)
 	}
 
-	var id uint64
-	for !rabia.IsValid(id) {
-		var stamp = uint64(time.Now().UnixMilli())
-		id = uint64(rand.Uint32())<<32 | stamp
-	}
-
+	var id = rabia.RandomProposal()
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Key)))
 	var header = append(length, r.Key...)
 	var proposals = make([][]byte, SEGMENTS)
