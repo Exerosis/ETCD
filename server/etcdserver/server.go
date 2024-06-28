@@ -269,9 +269,9 @@ type RsRabia struct {
 	server          *EtcdServer
 	rabia           rabia.Node
 	encoder         reedsolomon.Encoder
-	keys            *rabia.BlockingMap[uint64, uint64]
+	keys            *rabia.BlockingMap[string, uint64]
 	requests        *rabia.BlockingMap[uint64, uint64]
-	slots           *rabia.BlockingMap[uint64, uint64]
+	slots           *rabia.BlockingMap[uint64, string]
 	responses       map[uint64]*RsReadResponses
 	responsesLock   sync.RWMutex
 	reader          rabia.Connection
@@ -284,9 +284,8 @@ func (rabia *RsRabia) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rab
 	trace := traceutil.Get(context.Background())
 	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	var key = make([]byte, 8)
-	binary.LittleEndian.PutUint64(key, rabia.slots.WaitFor(in.Slot))
-	result, err := read.Range(ctx, key, nil, options)
+	var key = rabia.slots.WaitFor(in.Slot)
+	result, err := read.Range(ctx, []byte(key), nil, options)
 	if err != nil {
 		return nil, err
 	}
@@ -333,9 +332,9 @@ func NewRsRabia(e *EtcdServer, address string, addresses []string, f uint16, pip
 		server:        e,
 		rabia:         node,
 		encoder:       encoder,
-		keys:          rabia.NewBlockingMap[uint64, uint64](),
+		keys:          rabia.NewBlockingMap[string, uint64](),
 		requests:      rabia.NewBlockingMap[uint64, uint64](),
-		slots:         rabia.NewBlockingMap[uint64, uint64](),
+		slots:         rabia.NewBlockingMap[uint64, string](),
 		responses:     make(map[uint64]*RsReadResponses),
 		responsesLock: sync.RWMutex{},
 	}
@@ -787,16 +786,15 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		go func() {
 			for {
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
-					//println("Consuming ", id)
-					var key = make([]byte, 8)
-					binary.LittleEndian.PutUint64(key, id)
+					var length = binary.LittleEndian.Uint32(data)
+					var key = data[4 : length+4]
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
-					write.Put(key, data, 0)
+					write.Put(key, data[length+4:], 0)
 					write.End()
 					node.requests.Set(id, id)
-					node.keys.Set(id, i)
-					node.slots.Set(i, id)
+					node.keys.Set(string(key), i)
+					node.slots.Set(i, string(key))
 					return nil
 				})
 				if err != nil {

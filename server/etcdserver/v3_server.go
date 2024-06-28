@@ -19,14 +19,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
+	"math/rand"
+	"slices"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -249,12 +249,10 @@ func (s *EtcdServer) PineappleDeleteRange(ctx context.Context, r *pb.DeleteRange
 	}, nil
 }
 
-func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-	println("\nRabia Put")
-	var split = strings.Split(string(r.Key), "usertable:user")
+func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	println("\nRacos Put")
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
-	//println(string(r.Value))
 	var data = append(length, r.Value...)
 	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
 	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
@@ -273,15 +271,21 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	if err != nil {
 		panic(err)
 	}
-	id, err := strconv.ParseUint(split[1], 10, 64)
-	if err != nil {
-		return nil, err
-	}
+
+	var id uint64
 	for !rabia.IsValid(id) {
-		return nil, errors.ErrKeyNotFound
+		var stamp = uint64(time.Now().UnixMilli())
+		id = uint64(rand.Uint32())<<32 | stamp
+	}
+
+	binary.LittleEndian.PutUint32(length, uint32(len(r.Key)))
+	var header = append(length, r.Key...)
+	var proposals = make([][]byte, SEGMENTS)
+	for i := range segments {
+		proposals[i] = append(header, segments[i]...)
 	}
 	s.rsRabia.requests.Delete(id)
-	err = s.rsRabia.rabia.ProposeEach(id, segments)
+	err = s.rsRabia.rabia.ProposeEach(id, proposals)
 	s.rsRabia.requests.WaitFor(id)
 	if err != nil {
 		return nil, err
@@ -300,16 +304,9 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	}, nil
 }
 
-var started uint32 = 0
-var waited uint32 = 0
-var finished uint32 = 0
-
-func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	var split = strings.Split(string(r.Key), "usertable:user")
-	id, err := strconv.ParseUint(split[1], 10, 64)
-
-	var slot = s.rsRabia.keys.WaitFor(id)
-	println("\nRabia Read: ", slot)
+func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	var slot = s.rsRabia.keys.WaitFor(string(r.Key))
+	println("\nRacos Read: ", slot)
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS + PARITY)
@@ -322,7 +319,12 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 				panic(err)
 			}
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
-				segments[i] = response.Value
+				var length = binary.LittleEndian.Uint32(response.Value)
+				var key = response.Value[4 : length+4]
+				if !slices.Equal(key, r.Key) {
+					panic("Reading another keys data!")
+				}
+				segments[i] = response.Value[length+4:]
 				println("Got response from: ", i)
 				group.Done()
 			}
@@ -330,9 +332,8 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	group.Wait()
 	println("total count: ", atomic.LoadUint32(&count))
-	err = s.rsRabia.encoder.ReconstructData(segments)
+	var err = s.rsRabia.encoder.ReconstructData(segments)
 	if err != nil {
-		println("too few shards ig? ", err)
 		return nil, err
 	}
 	var combinedData []byte
@@ -342,13 +343,14 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
 	if length != uint32(len(combinedData[4:])) {
+		print("big problem lets add more debug later")
+	}
 
-	}
-	var it map[string][]byte
-	err = json.NewDecoder(bytes.NewReader(combinedData[4 : length+4])).Decode(&it)
-	if err != nil {
-		println(string(combinedData[4 : length+4]))
-	}
+	//var it map[string][]byte
+	//err = json.NewDecoder(bytes.NewReader(data)).Decode(&it)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	var kvs = []*mvccpb.KeyValue{{
 		Key:            r.Key,
@@ -358,7 +360,6 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		Value:          combinedData[4 : length+4],
 		Lease:          0,
 	}}
-	println("Finished: ", atomic.AddUint32(&finished, 1))
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
 		Kvs:    kvs,
@@ -423,7 +424,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		return s.PineapplePut(ctx, r)
 	}
 	if RS_RABIA {
-		return s.RabiaPut(ctx, r)
+		return s.RacosPut(ctx, r)
 	}
 	return s.RaftPut(ctx, r)
 }
@@ -448,7 +449,7 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 		return s.PineappleRange(ctx, r)
 	}
 	if RS_RABIA {
-		return s.RabiaRange(ctx, r)
+		return s.RacosRange(ctx, r)
 	}
 	return s.RaftRange(ctx, r)
 }
