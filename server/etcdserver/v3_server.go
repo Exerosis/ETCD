@@ -398,6 +398,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if len(result.KVs) < 1 {
 		return nil, os.ErrInvalid
 	}
+	print(string(result.KVs[0].Value))
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
 		Kvs:    []*mvccpb.KeyValue{&result.KVs[0]},
