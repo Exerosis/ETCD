@@ -273,7 +273,7 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	var id = rabia.RandomProposal()
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Key)))
 	var header = append(length, r.Key...)
-	var proposals = make([][]byte, SEGMENTS)
+	var proposals = make([][]byte, SEGMENTS+PARITY)
 	for i := range segments {
 		proposals[i] = append(header, segments[i]...)
 	}
