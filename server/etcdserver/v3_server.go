@@ -311,7 +311,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	println("\nRabia Read: ", slot)
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
-	group.Add(SEGMENTS)
+	group.Add(SEGMENTS + PARITY)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: slot}
 	for i, client := range s.rsRabia.clients {
@@ -320,7 +320,7 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 			if err != nil {
 				panic(err)
 			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
 				segments[i] = response.Value
 				println("Got response from: ", i)
 				group.Done()
@@ -340,7 +340,9 @@ func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
+	if length != uint32(len(combinedData[4:])) {
 
+	}
 	var it map[string][]byte
 	err = json.NewDecoder(bytes.NewReader(combinedData[4 : length+4])).Decode(&it)
 	if err != nil {
