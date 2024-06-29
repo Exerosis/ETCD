@@ -20,14 +20,11 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/exerosis/RabiaGo/rabia"
-	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
 	"os"
 	"strconv"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -298,58 +295,36 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 }
 
 func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
-	var slot = s.racos.keys.WaitFor(string(r.Key))
-	var segments = make([][]byte, SEGMENTS+PARITY)
-	var group sync.WaitGroup
-	group.Add(SEGMENTS + PARITY)
-	var count = uint32(0)
-	var request = &rabia_rpc.ReadRequest{Slot: slot}
-	for i, client := range s.racos.clients {
-		go func(i int, client rabia_rpc.NodeClient) {
-			response, err := client.Read(context.Background(), request)
-			if err != nil {
-				panic(err)
-			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
-				segments[i] = response.Value
-				println("Got response from: ", i)
-				group.Done()
-			}
-		}(i, client)
+	if TRANSACTION_READ {
+		//Propose that everyone agree that this slot is for reading.
+		var id = rabia.RandomProposal()
+		var err = s.rabia.node.Propose(id, []byte{0})
+		if err != nil {
+			return nil, err
+		}
+		s.racos.requests.WaitFor(id)
 	}
-	group.Wait()
-	println("total count: ", atomic.LoadUint32(&count))
-	var err = s.racos.encoder.ReconstructData(segments)
+
+	//Okay either we waited for a slot or we didn't, now we see what slot most recently had data on that key.
+	var keyId, present = s.racos.keys[string(r.Key)]
+	if !present {
+		//we don't have anything for that key yet so don't need to request segments.
+		return &pb.RangeResponse{
+			Header: &pb.ResponseHeader{},
+			Kvs:    []*mvccpb.KeyValue{},
+		}, nil
+	}
+	//Ask everyone else for their segments and reconstruct.
+	data, err := s.racos.QuorumRead(keyId)
 	if err != nil {
 		return nil, err
 	}
-	var combinedData []byte
-	for i := 0; i < SEGMENTS; i++ {
-		combinedData = append(combinedData, segments[i]...)
-	}
-	var length = binary.LittleEndian.Uint32(combinedData)
-	println("Got length: ", length, " vs ", len(combinedData[4:]))
-	if length != uint32(len(combinedData[4:])) {
-		println(string(combinedData[4:]))
-	}
-
-	//var it map[string][]byte
-	//err = json.NewDecoder(bytes.NewReader(data)).Decode(&it)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	var kvs = []*mvccpb.KeyValue{{
-		Key:            r.Key,
-		CreateRevision: 0,
-		ModRevision:    0,
-		Version:        0,
-		Value:          combinedData[4 : length+4],
-		Lease:          0,
-	}}
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
-		Kvs:    kvs,
+		Kvs: []*mvccpb.KeyValue{{
+			Key:   r.Key,
+			Value: data,
+		}},
 	}, nil
 }
 
@@ -364,7 +339,6 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		return nil, err
 	}
 	s.rabia.requests.WaitFor(id)
-	s.rabia.requests.Delete(id)
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{

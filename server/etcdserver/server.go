@@ -248,7 +248,7 @@ func LoadAddresses(name string) []string {
 	return nodes
 }
 
-// var PINEAPPLE = LoadEnv("_")
+var TRANSACTION_READ = true // LoadEnv("TRANSACTION_READ")
 var RACOS = LoadEnv("RACOS")
 var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RABIA = LoadEnv("RABIA")
@@ -271,9 +271,8 @@ type Racos struct {
 	server          *EtcdServer
 	rabia           rabia.Node
 	encoder         reedsolomon.Encoder
-	keys            *rabia.BlockingMap[string, uint64]
-	requests        *rabia.BlockingMap[uint64, uint64]
-	slots           *rabia.BlockingMap[uint64, string]
+	keys            map[string]uint64
+	requests        *rabia.BlockingMap[uint64, string]
 	responses       map[uint64]*RsReadResponses
 	responsesLock   sync.RWMutex
 	reader          rabia.Connection
@@ -281,12 +280,49 @@ type Racos struct {
 	readersOutbound []rabia.Connection
 }
 
-func (rabia *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
+func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
+	var segments = make([][]byte, SEGMENTS+PARITY)
+	var group sync.WaitGroup
+	group.Add(SEGMENTS + PARITY)
+	var count = uint32(0)
+	var request = &rabia_rpc.ReadRequest{Slot: id}
+	for i, client := range racos.clients {
+		go func(i int, client rabia_rpc.NodeClient) {
+			response, err := client.Read(context.Background(), request)
+			if err != nil {
+				panic(err)
+			}
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
+				segments[i] = response.Value
+				println("Got response from: ", i)
+				group.Done()
+			}
+		}(i, client)
+	}
+	group.Wait()
+	println("total count: ", atomic.LoadUint32(&count))
+	var err = racos.encoder.ReconstructData(segments)
+	if err != nil {
+		return nil, err
+	}
+	var combinedData []byte
+	for i := 0; i < SEGMENTS; i++ {
+		combinedData = append(combinedData, segments[i]...)
+	}
+	var length = binary.LittleEndian.Uint32(combinedData)
+	println("Got length: ", length, " vs ", len(combinedData[4:]))
+	if length != uint32(len(combinedData[4:])) {
+		println(string(combinedData[4:]))
+	}
+	return combinedData[4 : length+4], nil
+}
+
+func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
 	var options = mvcc.RangeOptions{}
 	trace := traceutil.Get(context.Background())
-	var read = rabia.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	var key = rabia.slots.WaitFor(in.Slot)
+	var key = racos.requests.WaitFor(in.Slot)
 	result, err := read.Range(ctx, []byte(key), nil, options)
 	if err != nil {
 		return nil, err
@@ -334,9 +370,8 @@ func NewRacos(e *EtcdServer, address string, addresses []string, f uint16, pipes
 		server:        e,
 		rabia:         node,
 		encoder:       encoder,
-		keys:          rabia.NewBlockingMap[string, uint64](),
-		requests:      rabia.NewBlockingMap[uint64, uint64](),
-		slots:         rabia.NewBlockingMap[uint64, string](),
+		keys:          make(map[string]uint64),
+		requests:      rabia.NewBlockingMap[uint64, string](),
 		responses:     make(map[uint64]*RsReadResponses),
 		responsesLock: sync.RWMutex{},
 	}
@@ -815,9 +850,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					var write = srv.KV().Write(trace)
 					write.Put(key, data[length+4:], 0)
 					write.End()
-					node.requests.Set(id, id)
-					node.keys.Set(string(key), i)
-					node.slots.Set(i, string(key))
+					node.requests.Set(id, string(key))
+					node.keys[string(key)] = id
 					return nil
 				})
 				if err != nil {
