@@ -844,6 +844,10 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		go func() {
 			for {
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
+					if len(data) == 1 {
+						node.requests.Set(id, "")
+						return nil
+					}
 					var length = binary.LittleEndian.Uint32(data)
 					var key = data[4 : length+4]
 					trace := traceutil.Get(context.Background())
