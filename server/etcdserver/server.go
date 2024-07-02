@@ -344,6 +344,7 @@ func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts
 func NewRacos(e *EtcdServer, address string, addresses []string, f uint16, pipes ...uint16) (*Racos, error) {
 	sort.Sort(sort.StringSlice(addresses))
 	println("starting")
+	fmt.Printf("TRANSACTION_READ: %t", TRANSACTION_READ)
 	for _, s := range addresses {
 		println(s)
 	}
