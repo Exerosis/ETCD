@@ -248,7 +248,7 @@ func LoadAddresses(name string) []string {
 	return nodes
 }
 
-var TRANSACTION_READ = true // LoadEnv("TRANSACTION_READ")
+var TRANSACTION_READ = LoadEnv("TRANSACTION_READ")
 var RACOS = LoadEnv("RACOS")
 var PINEAPPLE = LoadEnv("PINEAPPLE")
 var RABIA = LoadEnv("RABIA")
