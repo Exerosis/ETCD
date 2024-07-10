@@ -302,8 +302,8 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	group.Wait()
 	println("total count: ", atomic.LoadUint32(&count))
 	println("Parity", PARITY)
-	segments[0] = nil
-	segments[1] = nil
+	segments[3] = nil
+	segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
