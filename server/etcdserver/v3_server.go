@@ -298,7 +298,8 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	if TRANSACTION_READ {
 		//Propose that everyone agree that this slot is for reading.
 		var id = rabia.RandomProposal()
-		var err = s.rabia.node.Propose(id, []byte{0})
+		var test = []byte{0}
+		var err = s.rabia.node.Propose(id, test)
 		if err != nil {
 			return nil, err
 		}
