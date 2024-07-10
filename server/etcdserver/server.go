@@ -294,14 +294,11 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 			}
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
 				segments[i] = response.Value
-				println("Got response from: ", i)
 				group.Done()
 			}
 		}(i, client)
 	}
 	group.Wait()
-	println("total count: ", atomic.LoadUint32(&count))
-	println("Parity", PARITY)
 	segments[3] = nil
 	segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
@@ -314,9 +311,6 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
 	println("Got length: ", length, " vs ", len(combinedData[4:]))
-	if length != uint32(len(combinedData[4:])) {
-		println(string(combinedData[4:]))
-	}
 	return combinedData[4 : length+4], nil
 }
 
