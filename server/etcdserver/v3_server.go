@@ -20,9 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/exerosis/RabiaGo/rabia"
-	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -249,20 +247,21 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	var length = make([]byte, 4)
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
 	var data = append(length, r.Value...)
-	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
-	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
-	var startIndex = 0
+	//var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
+	//var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
+	segments, err := s.racos.encoder.Split(data)
+	//var startIndex = 0
+	//
+	//for i := range segments[:SEGMENTS] {
+	//	endIndex := startIndex + segmentSize
+	//	if endIndex > len(data) {
+	//		endIndex = len(data)
+	//	}
+	//	copy(segments[i], data[startIndex:endIndex])
+	//	startIndex = endIndex
+	//}
 
-	for i := range segments[:SEGMENTS] {
-		endIndex := startIndex + segmentSize
-		if endIndex > len(data) {
-			endIndex = len(data)
-		}
-		copy(segments[i], data[startIndex:endIndex])
-		startIndex = endIndex
-	}
-
-	err := s.racos.encoder.Encode(segments)
+	err = s.racos.encoder.Encode(segments)
 	if err != nil {
 		panic(err)
 	}
