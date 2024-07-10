@@ -283,7 +283,7 @@ type Racos struct {
 func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
-	group.Add(SEGMENTS + PARITY)
+	group.Add(SEGMENTS)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: id}
 	for i, client := range racos.clients {
@@ -292,15 +292,15 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 			if err != nil {
 				panic(err)
 			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
 				segments[i] = response.Value
 				group.Done()
 			}
 		}(i, client)
 	}
 	group.Wait()
-	segments[0] = nil
-	segments[1] = nil
+	//segments[0] = nil
+	//segments[1] = nil
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
@@ -310,30 +310,25 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
-	println("Got length: ", length, " vs ", len(combinedData[4:]))
 	return combinedData[4 : length+4], nil
 }
 
 func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
-
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
 	var tvvv = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
-label:
-	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if len(result.KVs) < 1 {
-		time.Sleep(50 * time.Microsecond)
-		println("trying again!")
-		goto label
-		//return nil, os.ErrInvalid
-	}
-	println("Did get and can confirm that: ", len(result.KVs[0].Value) == 4451)
+	//if len(result.KVs) < 1 {
+	//	time.Sleep(50 * time.Microsecond)
+	//	println("trying again!")
+	//	//return nil, os.ErrInvalid
+	//}
 	return &rabia_rpc.ReadResponse{Value: []byte(tvvv)}, nil
 }
 
