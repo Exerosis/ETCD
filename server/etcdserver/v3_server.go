@@ -267,8 +267,8 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		panic(err)
 	}
 
-	segments[3] = nil
-	segments[4] = nil
+	segments[0] = nil
+	segments[1] = nil
 	err = s.racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
