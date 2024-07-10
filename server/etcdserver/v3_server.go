@@ -267,22 +267,6 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 		panic(err)
 	}
 
-	segments[0] = nil
-	segments[1] = nil
-	err = s.racos.encoder.ReconstructData(segments)
-	if err != nil {
-		return nil, err
-	}
-	var combinedData []byte
-	for i := 0; i < SEGMENTS; i++ {
-		combinedData = append(combinedData, segments[i]...)
-	}
-	var tlength = int(binary.LittleEndian.Uint32(combinedData))
-	println("CONFIRMED!: ", tlength, " vs ", len(r.Value))
-	if tlength != len(r.Value) {
-		panic("wrong")
-	}
-
 	var id = rabia.RandomProposal()
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Key)))
 	var header = append(length, r.Key...)

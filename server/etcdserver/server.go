@@ -319,8 +319,10 @@ func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	var key = racos.requests.WaitFor(in.Slot)
-	result, err := read.Range(ctx, []byte(key), nil, options)
+	var _ = racos.requests.WaitFor(in.Slot)
+	var testTest = make([]byte, 8)
+	binary.LittleEndian.PutUint64(testTest, in.Slot)
+	result, err := read.Range(ctx, testTest, nil, options)
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +852,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					var key = data[4 : length+4]
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
-					write.Put(key, data[length+4:], 0)
+					var testTest = make([]byte, 8)
+					binary.LittleEndian.PutUint64(testTest, id)
+					write.Put(testTest, data[length+4:], 0)
 					write.End()
 					node.requests.Set(id, string(key))
 					node.keys[string(key)] = id
