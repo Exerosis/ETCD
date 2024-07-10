@@ -250,7 +250,6 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	binary.LittleEndian.PutUint32(length, uint32(len(r.Value)))
 	var data = append(length, r.Value...)
 	var segmentSize = int(math.Ceil(float64(len(data)) / float64(SEGMENTS)))
-	println(segmentSize)
 	var segments = reedsolomon.AllocAligned(SEGMENTS+PARITY, segmentSize)
 	var startIndex = 0
 
