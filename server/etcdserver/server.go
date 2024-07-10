@@ -322,12 +322,16 @@ func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia
 	var tvvv = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
+label:
 	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
 	if err != nil {
 		return nil, err
 	}
 	if len(result.KVs) < 1 {
-		return nil, os.ErrInvalid
+		time.Sleep(50 * time.Microsecond)
+		println("trying again!")
+		goto label
+		//return nil, os.ErrInvalid
 	}
 	println("Did get and can confirm that: ", len(result.KVs[0].Value) == 4451)
 	return &rabia_rpc.ReadResponse{Value: []byte(tvvv)}, nil
@@ -855,7 +859,6 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					var write = srv.KV().Write(trace)
 					var testTest = make([]byte, 8)
 					binary.LittleEndian.PutUint64(testTest, id)
-					println("COnfirming that: ", len(data[length+4:]) == 4451)
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
 					node.requests.Set(id, string(data[length+4:]))
