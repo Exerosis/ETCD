@@ -25,6 +25,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -328,7 +329,11 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}, nil
 }
 
+var reads = uint64(0)
+var writes = uint64(0)
+
 func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+	println("Write: ", atomic.AddUint64(&writes, 1))
 	var header = make([]byte, 4)
 	binary.LittleEndian.PutUint32(header, uint32(len(r.Key)))
 	var data = append(header, append(r.Key, r.Value...)...)
@@ -353,6 +358,7 @@ func (s *EtcdServer) RabiaPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 }
 
 func (s *EtcdServer) RabiaRange(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
+	println("Read: ", atomic.AddUint64(&reads, 1))
 	var id = rabia.RandomProposal()
 	s.rabia.requests.Delete(id)
 	var err = s.rabia.node.Propose(id, []byte{0})
