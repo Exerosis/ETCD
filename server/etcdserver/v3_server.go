@@ -307,7 +307,9 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 	}
 
 	//Okay either we waited for a slot or we didn't, now we see what slot most recently had data on that key.
+	s.racos.keysLock.RLock()
 	var keyId, present = s.racos.keys[string(r.Key)]
+	s.racos.keysLock.RUnlock()
 	if !present {
 		//we don't have anything for that key yet so don't need to request segments.
 		return &pb.RangeResponse{

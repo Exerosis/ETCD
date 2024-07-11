@@ -271,6 +271,7 @@ type Racos struct {
 	server          *EtcdServer
 	rabia           rabia.Node
 	encoder         reedsolomon.Encoder
+	keysLock        sync.RWMutex
 	keys            map[string]uint64
 	requests        *rabia.BlockingMap[uint64, string]
 	responses       map[uint64]*RsReadResponses
@@ -370,6 +371,7 @@ func NewRacos(e *EtcdServer, address string, addresses []string, f uint16, pipes
 		server:        e,
 		rabia:         node,
 		encoder:       encoder,
+		keysLock:      sync.RWMutex{},
 		keys:          make(map[string]uint64),
 		requests:      rabia.NewBlockingMap[uint64, string](),
 		responses:     make(map[uint64]*RsReadResponses),
@@ -857,7 +859,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
 					node.requests.Set(id, string(data[length+4:]))
+					node.keysLock.Lock()
 					node.keys[string(key)] = id
+					node.keysLock.Unlock()
 					return nil
 				})
 				if err != nil {
