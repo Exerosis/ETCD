@@ -305,19 +305,8 @@ func (s *EtcdServer) RacosRange(ctx context.Context, r *pb.RangeRequest) (*pb.Ra
 		s.racos.requests.WaitFor(id)
 	}
 
-	//Okay either we waited for a slot or we didn't, now we see what slot most recently had data on that key.
-	s.racos.keysLock.RLock()
-	var keyId, present = s.racos.keys[string(r.Key)]
-	s.racos.keysLock.RUnlock()
-	if !present {
-		//we don't have anything for that key yet so don't need to request segments.
-		return &pb.RangeResponse{
-			Header: &pb.ResponseHeader{},
-			Kvs:    []*mvccpb.KeyValue{},
-		}, nil
-	}
 	//Ask everyone else for their segments and reconstruct.
-	data, err := s.racos.QuorumRead(keyId)
+	data, err := s.racos.QuorumRead(r.Key)
 	if err != nil {
 		return nil, err
 	}
