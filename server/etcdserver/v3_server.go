@@ -143,13 +143,12 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Paxos Put")
-	s.paxos.Write(r.Key, r.Value, func(key []byte, value []byte) {
+	s.paxos.Forward(r.Key, r.Value, func(key []byte, value []byte) {
 		trace := traceutil.Get(context.TODO())
 		var write = s.KV().Write(trace)
 		write.Put(key, value, 0)
 		write.End()
 	})
-
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
@@ -451,6 +450,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 // proxied to the leader and the leader will get the original call to EtcdServer*#Put and call this again
 // etc
 func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
+
 	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
 	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
 	if err != nil {
@@ -1032,6 +1032,8 @@ func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.In
 	proposalsPending.Inc()
 	defer proposalsPending.Dec()
 
+	println("Sleeping!")
+	time.Sleep(10 * time.Second)
 	select {
 	case x := <-ch:
 		return x.(*apply2.Result), nil

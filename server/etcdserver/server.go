@@ -759,6 +759,17 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic("PROBLEM CREATING RS ENCODER")
 		}
 
+		var index = -1
+		for i, item := range NODES {
+			if item == address {
+				index = i
+			}
+		}
+
+		if index == -1 {
+			panic("CAN'T FIND NODE!")
+		}
+
 		srv.paxos = paxos.Node{
 			Clients: make([]paxos.Client, 0),
 			Encoder: encoder,
@@ -770,6 +781,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Quorum:   QUORUM,
 			Parity:   PARITY,
 			Segments: SEGMENTS,
+			Leader:   0,
+			Index:    index,
 		}
 		go func() {
 			println("RS-PAXOS: ACCEPTING - dev")
@@ -783,12 +796,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				panic(err)
 			}
 		}()
-		err = srv.paxos.Connect(address, NODES, func(key []byte, value []byte) {
-			trace := traceutil.Get(context.Background())
-			var write = srv.KV().Write(trace)
-			write.Put(key, value, 0)
-			write.End()
-		})
+		err = srv.paxos.Connect(address, NODES)
 
 		if err != nil {
 			panic(err)
