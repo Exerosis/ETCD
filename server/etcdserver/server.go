@@ -772,7 +772,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Segments: SEGMENTS,
 		}
 		go func() {
-			println("RS-PAXOS: ACCEPTING")
+			println("RS-PAXOS: ACCEPTING - dev")
 			err := srv.paxos.Accept(address, func(key []byte, value []byte) {
 				trace := traceutil.Get(context.TODO())
 				var write = srv.KV().Write(trace)
