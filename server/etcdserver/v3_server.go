@@ -525,7 +525,7 @@ func (s *EtcdServer) DeleteRange(ctx context.Context, r *pb.DeleteRangeRequest) 
 
 func (s *EtcdServer) Compact(ctx context.Context, r *pb.CompactionRequest) (*pb.CompactionResponse, error) {
 	startTime := time.Now()
-	result, err := s.processInternalRaftRequestOnce(ctx, pb.InternalRaftRequest{Compaction: r})
+	result, err := s.processInternalRaftRequestOnce(ctx, pb.InternalRaftRequest{Compaction: r}, true)
 	trace := traceutil.TODO()
 	if result != nil && result.Trace != nil {
 		trace = result.Trace
@@ -933,7 +933,7 @@ func (s *EtcdServer) RoleDelete(ctx context.Context, r *pb.AuthRoleDeleteRequest
 }
 
 func (s *EtcdServer) raftRequestOnce(ctx context.Context, r pb.InternalRaftRequest) (proto.Message, error) {
-	result, err := s.processInternalRaftRequestOnce(ctx, r)
+	result, err := s.processInternalRaftRequestOnce(ctx, r, false)
 	if err != nil {
 		return nil, err
 	}
@@ -981,7 +981,7 @@ func (s *EtcdServer) doSerialize(ctx context.Context, chk func(*auth.AuthInfo) e
 	return nil
 }
 
-func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.InternalRaftRequest) (*apply2.Result, error) {
+func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.InternalRaftRequest, compact bool) (*apply2.Result, error) {
 	ai := s.getAppliedIndex()
 	ci := s.getCommittedIndex()
 	if ci > ai+maxGapBetweenApplyAndCommitIndex {
@@ -1032,8 +1032,10 @@ func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.In
 	proposalsPending.Inc()
 	defer proposalsPending.Dec()
 
-	println("Sleeping!")
-	time.Sleep(5 * time.Second)
+	if !compact {
+		println("Sleeping!")
+		time.Sleep(5 * time.Second)
+	}
 	select {
 	case x := <-ch:
 		return x.(*apply2.Result), nil
