@@ -1033,7 +1033,7 @@ func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.In
 	defer proposalsPending.Dec()
 
 	println("Sleeping!")
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	select {
 	case x := <-ch:
 		return x.(*apply2.Result), nil
