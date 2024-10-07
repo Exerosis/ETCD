@@ -778,11 +778,13 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				Lock:    &sync.Mutex{},
 				Entries: make(map[uint32]*paxos.Entry),
 			},
-			Quorum:   QUORUM,
-			Parity:   PARITY,
-			Segments: SEGMENTS,
-			Leader:   0,
-			Index:    index,
+			Quorum:        QUORUM,
+			Parity:        PARITY,
+			Segments:      SEGMENTS,
+			Leader:        0,
+			Index:         index,
+			RequestWaiter: make(map[string]chan struct{}),
+			RequestLock:   &sync.Mutex{},
 		}
 		go func() {
 			println("RS-PAXOS: ACCEPTING - dev")

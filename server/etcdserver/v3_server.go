@@ -143,12 +143,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Paxos Put")
-	s.paxos.Forward(r.Key, r.Value, func(key []byte, value []byte) {
-		trace := traceutil.Get(context.TODO())
-		var write = s.KV().Write(trace)
-		write.Put(key, value, 0)
-		write.End()
-	})
+	s.paxos.Forward(r.Key, r.Value)
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
@@ -1032,10 +1027,6 @@ func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.In
 	proposalsPending.Inc()
 	defer proposalsPending.Dec()
 
-	if !compact {
-		println("Sleeping!")
-		time.Sleep(5 * time.Second)
-	}
 	select {
 	case x := <-ch:
 		return x.(*apply2.Result), nil
