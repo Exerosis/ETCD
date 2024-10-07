@@ -281,47 +281,12 @@ type Racos struct {
 	readersOutbound []rabia.Connection
 }
 
-func (racos *Racos) QuorumPeek(key []byte) (uint64, bool) {
-	var request = &rabia_rpc.PeekRequest{Key: key}
-	var group sync.WaitGroup
-	var responses = make([]*rabia_rpc.PeekResponse, len(racos.clients))
-	group.Add(QUORUM)
-	var count = uint32(0)
-	for i := 0; i < len(racos.clients); i++ {
-		go func(i int, client rabia_rpc.NodeClient) {
-			var response, reason = client.Peek(context.Background(), request)
-			if reason != nil {
-				panic(reason)
-			}
-			responses[i] = response
-			if atomic.AddUint32(&count, 1) <= uint32(QUORUM) {
-				group.Done()
-			}
-		}(i, racos.clients[i])
-	}
-	group.Wait()
-	var highest = int64(-1)
-	for _, response := range responses {
-		if response != nil && highest < response.Slot {
-			highest = response.Slot
-		}
-	}
-	if highest < 0 {
-		return 0, false
-	}
-	return uint64(highest), true
-}
-
-func (racos *Racos) QuorumRead(key []byte) ([]byte, error) {
-	highest, present := racos.QuorumPeek(key)
-	if !present {
-		return make([]byte, 0), nil
-	}
+func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
 	group.Add(SEGMENTS)
 	var count = uint32(0)
-	var request = &rabia_rpc.ReadRequest{Slot: highest}
+	var request = &rabia_rpc.ReadRequest{Slot: id}
 	for i, client := range racos.clients {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(context.Background(), request)
@@ -353,36 +318,23 @@ func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	var _ = racos.requests.WaitFor(in.Slot)
+	var tvvv = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
-	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if len(result.KVs) < 1 {
-		return nil, os.ErrInvalid
-	}
-	return &rabia_rpc.ReadResponse{Value: result.KVs[0].Value}, nil
-}
-
-func (racos *Racos) Peek(ctx context.Context, in *rabia_rpc.PeekRequest) (*rabia_rpc.PeekResponse, error) {
-	racos.keysLock.RLock()
-	defer racos.keysLock.RUnlock()
-	value, present := racos.keys[string(in.Key)]
-	var slot = int64(-1)
-	if present {
-		slot = int64(value)
-	}
-	return &rabia_rpc.PeekResponse{Slot: slot}, nil
+	//if len(result.KVs) < 1 {
+	//	time.Sleep(50 * time.Microsecond)
+	//	println("trying again!")
+	//	//return nil, os.ErrInvalid
+	//}
+	return &rabia_rpc.ReadResponse{Value: []byte(tvvv)}, nil
 }
 
 type LocalNode struct {
 	rabia *Racos
-}
-
-func (node *LocalNode) Peek(ctx context.Context, in *rabia_rpc.PeekRequest, opts ...grpc.CallOption) (*rabia_rpc.PeekResponse, error) {
-	return node.rabia.Peek(ctx, in)
 }
 
 func (node *LocalNode) Read(ctx context.Context, in *rabia_rpc.ReadRequest, opts ...grpc.CallOption) (*rabia_rpc.ReadResponse, error) {
