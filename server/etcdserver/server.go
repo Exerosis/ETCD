@@ -310,7 +310,7 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	group.Wait()
 	for i := 0; i < SEGMENTS; i++ {
 		index, key, data := splitSeggy(segments[i])
-		println("Index: ", index, " Key: ", string(key), "Value: ", data)
+		fmt.Println("Index: ", index, " Key: ", string(key), "Value: ", data)
 	}
 	//segments[3] = nil
 	//segments[4] = nil
