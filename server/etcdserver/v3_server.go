@@ -109,41 +109,40 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 		panic("Range not supported only one key at a time!")
 	}
 
-	//value, reason := s.paxos.Read(s, r.Key)
+	value := s.paxos.ForwardRead(r.Key, func(key []byte) []byte {
+		var options = mvcc.RangeOptions{}
+		trace := traceutil.Get(context.Background())
+		var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+		value, err := read.Range(context.Background(), r.Key, nil, options)
+		if err != nil {
+			panic(err)
+		}
+		read.End()
 
-	var options = mvcc.RangeOptions{}
-	trace := traceutil.Get(context.Background())
-	var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	value, err := read.Range(context.Background(), r.Key, nil, options)
-	if err != nil {
-		panic(err)
-	}
+		var val []byte
+		val = nil
+		if len(value.KVs) > 0 {
+			val = value.KVs[0].Value
+		}
+		return val
+	})
 
-	var val []byte
-	val = nil
-	if len(value.KVs) > 0 {
-		val = value.KVs[0].Value
-	}
-
-	var kvs = []*mvccpb.KeyValue{{
-		Key:            r.Key,
-		CreateRevision: 0,
-		ModRevision:    0,
-		Version:        0,
-		Value:          val,
-		Lease:          0,
-	}}
-
-	read.End()
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
-		Kvs:    kvs,
+		Kvs: []*mvccpb.KeyValue{{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          value,
+			Lease:          0,
+		}},
 	}, nil
 }
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Paxos Put")
-	s.paxos.Forward(r.Key, r.Value)
+	s.paxos.ForwardWrite(r.Key, r.Value)
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
