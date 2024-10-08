@@ -20,6 +20,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/jonboulle/clockwork v0.3.0
 	github.com/klauspost/reedsolomon v1.12.0
+	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/client_model v0.3.0
 	github.com/soheilhy/cmux v0.1.5
