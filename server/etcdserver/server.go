@@ -300,7 +300,7 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		}(i, client)
 	}
 	group.Wait()
-	segments[0] = nil
+	segments[3] = nil
 	segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
@@ -847,9 +847,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}()
 		go func() {
 			for {
-				err := node.rabia.Consume(func(slot uint64, id uint64, data []byte) error {
+				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
 					if len(data) == 1 {
-						node.requests.Set(slot, "")
+						node.requests.Set(id, "")
 						return nil
 					}
 					var length = binary.LittleEndian.Uint32(data)
@@ -857,12 +857,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
 					var testTest = make([]byte, 8)
-					binary.LittleEndian.PutUint64(testTest, slot)
+					binary.LittleEndian.PutUint64(testTest, id)
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
-					node.requests.Set(slot, string(data[length+4:]))
+					node.requests.Set(i, string(data[length+4:]))
 					node.keysLock.Lock()
-					node.keys[string(key)] = slot
+					node.keys[string(key)] = id
 					node.keysLock.Unlock()
 					return nil
 				})
