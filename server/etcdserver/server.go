@@ -29,7 +29,6 @@ import (
 	"github.com/klauspost/reedsolomon"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -311,8 +310,9 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	group.Wait()
 	for i := 0; i < SEGMENTS; i++ {
 		index, key, data := splitSeggy(segments[i])
-		log.Fatal("Index: ", index, " Key: ", string(key), "Value: ", data)
+		println("Index: ", index, " Key: ", string(key), "Value: ", data)
 	}
+	panic("WTF MAN")
 	//segments[3] = nil
 	//segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
