@@ -316,10 +316,10 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 }
 
 func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
+	_ = racos.requests.WaitFor(in.Slot)
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	_ = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
 	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
