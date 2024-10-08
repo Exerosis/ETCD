@@ -281,6 +281,14 @@ type Racos struct {
 	readersOutbound []rabia.Connection
 }
 
+func splitSeggy(segment []byte) (int, []byte, []byte) {
+	var index = int(segment[0])
+	var length = binary.LittleEndian.Uint32(segment[1:])
+	var key = segment[5 : length+5]
+	var data = segment[length+5:]
+	return index, key, data
+}
+
 func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
@@ -300,8 +308,12 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		}(i, client)
 	}
 	group.Wait()
-	segments[3] = nil
-	segments[4] = nil
+	for i := 0; i < SEGMENTS; i++ {
+		index, key, data := splitSeggy(segments[i])
+		println("Index: ", index, " Key: ", string(key), "Value: ", data)
+	}
+	//segments[3] = nil
+	//segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
@@ -860,7 +872,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					binary.LittleEndian.PutUint64(testTest, id)
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
-					node.requests.Set(i, string(data[length+4:]))
+					node.requests.Set(id, string(data))
 					node.keysLock.Lock()
 					node.keys[string(key)] = id
 					node.keysLock.Unlock()
