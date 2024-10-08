@@ -314,8 +314,8 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		fmt.Println("Index: ", index, " Key: ", string(key))
 		segments[i] = data
 	}
-	//segments[3] = nil
-	//segments[4] = nil
+	segments[0] = nil
+	segments[4] = nil
 
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
