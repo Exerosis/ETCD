@@ -312,7 +312,6 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		index, key, data := splitSeggy(segments[i])
 		println("Index: ", index, " Key: ", string(key), "Value: ", data)
 	}
-	panic("WTF MAN")
 	//segments[3] = nil
 	//segments[4] = nil
 	var err = racos.encoder.ReconstructData(segments)
