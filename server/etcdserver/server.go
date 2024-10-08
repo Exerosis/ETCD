@@ -783,7 +783,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Segments:      SEGMENTS,
 			Leader:        0,
 			Index:         index,
-			RequestWaiter: make(map[string]chan struct{}),
+			RequestWaiter: make(map[uint32]chan struct{}),
 			RequestLock:   &sync.Mutex{},
 		}
 		go func() {
