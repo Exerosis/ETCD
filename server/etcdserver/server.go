@@ -291,7 +291,7 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(context.Background(), request)
 			if err != nil {
-				panic(err)
+				return
 			}
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
 				segments[i] = response.Value
@@ -300,9 +300,9 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		}(i, client)
 	}
 	group.Wait()
-	//segments[0] = nil
-	//segments[1] = nil
-	var err = racos.encoder.ReconstructData(segments)
+	segments[0] = nil
+	segments[1] = nil
+	var err = racos.encoder.Reconstruct(segments)
 	if err != nil {
 		return nil, err
 	}
