@@ -301,8 +301,8 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	}
 	group.Wait()
 	segments[0] = nil
-	segments[1] = nil
-	var err = racos.encoder.Reconstruct(segments)
+	segments[4] = nil
+	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
 	}
@@ -311,6 +311,7 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
+	println(length)
 	return combinedData[4 : length+4], nil
 }
 
