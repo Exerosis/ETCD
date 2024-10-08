@@ -864,7 +864,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 						node.requests.Set(id, "")
 						return nil
 					}
-					var length = binary.LittleEndian.Uint32(data)
+					var length = binary.LittleEndian.Uint32(data[1:])
 					var key = data[5 : length+5]
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
