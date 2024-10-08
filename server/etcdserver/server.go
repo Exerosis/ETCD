@@ -318,19 +318,20 @@ func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	defer read.End()
-	var tvvv = racos.requests.WaitFor(in.Slot)
+	_ = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
-	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
 	if err != nil {
 		return nil, err
 	}
-	//if len(result.KVs) < 1 {
-	//	time.Sleep(50 * time.Microsecond)
-	//	println("trying again!")
-	//	//return nil, os.ErrInvalid
-	//}
-	return &rabia_rpc.ReadResponse{Value: []byte(tvvv)}, nil
+	if len(result.KVs) < 1 {
+		panic("I don't even have a value at all lmfao")
+		//time.Sleep(50 * time.Microsecond)
+		//println("trying again!")
+		//return nil, os.ErrInvalid
+	}
+	return &rabia_rpc.ReadResponse{Value: []byte(result.KVs[0].Value)}, nil
 }
 
 type LocalNode struct {
