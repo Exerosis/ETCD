@@ -860,6 +860,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					binary.LittleEndian.PutUint64(testTest, id)
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
+					srv.KV().Commit()
 					node.requests.Set(id, string(data[length+4:]))
 					node.keysLock.Lock()
 					node.keys[string(key)] = id
