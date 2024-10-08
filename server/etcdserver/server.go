@@ -316,23 +316,23 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 }
 
 func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
-	_ = racos.requests.WaitFor(in.Slot)
-	trace := traceutil.Get(context.Background())
-	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	defer read.End()
+	var value = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
-	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	trace := traceutil.Get(context.Background())
+	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	read.End()
 	if err != nil {
 		return nil, err
 	}
-	if len(result.KVs) < 1 {
-		panic("I don't even have a value at all lmfao")
-		//time.Sleep(50 * time.Microsecond)
-		//println("trying again!")
-		//return nil, os.ErrInvalid
-	}
-	return &rabia_rpc.ReadResponse{Value: []byte(result.KVs[0].Value)}, nil
+	//if len(result.KVs) < 1 {
+	//	panic("I don't even have a value at all lmfao")
+	//	//time.Sleep(50 * time.Microsecond)
+	//	//println("trying again!")
+	//	//return nil, os.ErrInvalid
+	//}
+	return &rabia_rpc.ReadResponse{Value: []byte(value)}, nil
 }
 
 type LocalNode struct {
@@ -860,7 +860,6 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 					binary.LittleEndian.PutUint64(testTest, id)
 					write.Put(testTest, data[length+4:], 0)
 					write.End()
-					srv.KV().Commit()
 					node.requests.Set(id, string(data[length+4:]))
 					node.keysLock.Lock()
 					node.keys[string(key)] = id
