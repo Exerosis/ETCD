@@ -292,7 +292,7 @@ func splitSeggy(segment []byte) (int, []byte, []byte) {
 func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
-	group.Add(SEGMENTS)
+	group.Add(SEGMENTS + PARITY)
 	var count = uint32(0)
 	var request = &rabia_rpc.ReadRequest{Slot: id}
 	for i, client := range racos.clients {
@@ -301,14 +301,14 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 			if err != nil {
 				return
 			}
-			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
+			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS+PARITY) {
 				segments[i] = response.Value
 				group.Done()
 			}
 		}(i, client)
 	}
 	group.Wait()
-	for i := 0; i < SEGMENTS; i++ {
+	for i := 0; i < SEGMENTS+PARITY; i++ {
 		index, key, data := splitSeggy(segments[i])
 		fmt.Println("Index: ", index, " Key: ", string(key), "Value: ", data)
 	}
