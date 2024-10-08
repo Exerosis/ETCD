@@ -865,12 +865,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 						return nil
 					}
 					var length = binary.LittleEndian.Uint32(data)
-					var key = data[4 : length+4]
+					var key = data[5 : length+5]
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
 					var testTest = make([]byte, 8)
 					binary.LittleEndian.PutUint64(testTest, id)
-					write.Put(testTest, data[length+4:], 0)
+					write.Put(testTest, data[length+5:], 0)
 					write.End()
 					node.requests.Set(id, string(data))
 					node.keysLock.Lock()
