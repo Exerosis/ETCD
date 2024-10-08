@@ -26,7 +26,6 @@ import (
 	"github.com/exerosis/PineappleGo/pineapple"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
-	"github.com/google/uuid"
 	"github.com/klauspost/reedsolomon"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -784,7 +783,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Segments:      SEGMENTS,
 			Leader:        0,
 			Index:         index,
-			RequestWaiter: make(map[uuid.UUID]chan struct{}),
+			RequestWaiter: sync.Map{},
 			RequestLock:   &sync.Mutex{},
 		}
 		go func() {
