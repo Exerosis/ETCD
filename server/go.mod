@@ -1,6 +1,8 @@
 module go.etcd.io/etcd/server/v3
 
-go 1.19
+go 1.21
+
+toolchain go1.21.4
 
 //toolchain go1.21.4
 
@@ -55,7 +57,6 @@ require (
 	github.com/BertoldVdb/go-misc v0.1.8 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/better-concurrent/guc v0.0.0-20190520022744-eb29266403a1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
