@@ -308,11 +308,11 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		}(i, client)
 	}
 	group.Wait()
-	fmt.Println("things")
+	//fmt.Println("things")
 	for i := 0; i < SEGMENTS+PARITY; i++ {
 		if segments[i] != nil {
-			index, key, data := splitSeggy(segments[i])
-			fmt.Println("Index: ", index, " Key: ", string(key))
+			_, _, data := splitSeggy(segments[i])
+			//fmt.Println("Index: ", index, " Key: ", string(key))
 			segments[i] = data
 		}
 	}
