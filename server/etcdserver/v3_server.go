@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -111,7 +110,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 	}
 
 	value := s.paxos.ForwardRead(r.Key)
-	fmt.Printf("Got value with size=%d value=%s\n", len(value), string(value))
+	//fmt.Printf("Got value with size=%d value=%s\n", len(value), string(value))
 
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
