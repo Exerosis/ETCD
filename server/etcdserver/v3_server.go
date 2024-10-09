@@ -111,7 +111,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 	}
 
 	value := s.paxos.ForwardRead(r.Key)
-	fmt.Printf("Got value with size %d\n", len(value))
+	fmt.Printf("Got value with size size=%d value=%s\n", len(value), string(value))
 
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
