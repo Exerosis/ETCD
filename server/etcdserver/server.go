@@ -771,20 +771,16 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 
 		srv.paxos = paxos.Node{
-			Clients: make([]paxos.Client, 10),
-			Encoder: encoder,
-			Total:   len(NODES),
-			Log: paxos.Log{
-				Lock:    &sync.Mutex{},
-				Entries: sync.Map{},
-			},
+			Clients:       make([]paxos.Client, 10),
+			Encoder:       encoder,
+			Total:         len(NODES),
+			Entries:       sync.Map{},
 			Quorum:        QUORUM,
 			Parity:        PARITY,
 			Segments:      SEGMENTS,
 			Leader:        0,
 			Index:         index,
 			RequestWaiter: sync.Map{},
-			RequestLock:   &sync.Mutex{},
 		}
 		go func() {
 			println("RS-PAXOS: ACCEPTING - dev")
