@@ -789,6 +789,21 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 				var write = srv.KV().Write(trace)
 				write.Put(key, value, 0)
 				write.End()
+			}, func(key []byte) []byte {
+				var options = mvcc.RangeOptions{}
+				trace := traceutil.Get(context.Background())
+				var read = srv.KV().Read(mvcc.ConcurrentReadTxMode, trace)
+				value, err := read.Range(context.Background(), key, nil, options)
+				if err != nil {
+					panic(err)
+				}
+				read.End()
+				var val []byte
+				val = nil
+				if len(value.KVs) > 0 {
+					val = value.KVs[0].Value
+				}
+				return val
 			})
 			if err != nil {
 				panic(err)

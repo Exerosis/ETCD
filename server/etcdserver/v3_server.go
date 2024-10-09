@@ -109,23 +109,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 		panic("Range not supported only one key at a time!")
 	}
 
-	value := s.paxos.ForwardRead(r.Key, func(key []byte) []byte {
-		var options = mvcc.RangeOptions{}
-		trace := traceutil.Get(context.Background())
-		var read = s.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-		value, err := read.Range(context.Background(), r.Key, nil, options)
-		if err != nil {
-			panic(err)
-		}
-		read.End()
-
-		var val []byte
-		val = nil
-		if len(value.KVs) > 0 {
-			val = value.KVs[0].Value
-		}
-		return val
-	})
+	value := s.paxos.ForwardRead(r.Key)
 
 	return &pb.RangeResponse{
 		Header: &pb.ResponseHeader{},
