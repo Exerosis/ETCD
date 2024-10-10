@@ -257,8 +257,8 @@ var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
 var FAILURES = LoadInt("FAILURES")
 var SEGMENTS = LoadInt("SEGMENTS")
-var FAILURES_ENABLED = LoadEnv("FAILURES_ENABLED")
-var FAILURE_SLOT = LoadInt("FAILURE_SLOT")
+var FAILURES_ENABLED = true
+var FAILURE_SLOT = 30000
 var PARITY = len(NODES) - SEGMENTS
 var QUORUM = SEGMENTS + FAILURES // pass in segments later
 
@@ -927,6 +927,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}()
 		println("RACOS ENABLED ")
 	} else if RABIA {
+		var index = 0
+		for i, other := range NODES {
+			if other == address {
+				index = i
+			}
+		}
 		node, err := NewRabia(address, NODES, uint16(FAILURES), 50650)
 		if err != nil {
 			panic(err)
@@ -941,6 +947,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		go func() {
 			for {
 				err := node.node.Consume(func(i uint64, id uint64, data []byte) error {
+					if FAILURES_ENABLED && i == uint64(FAILURE_SLOT) && index == FAILURE_SLOT%len(NODES) {
+						panic("time to die :)")
+					}
 					if data[0] == 0 {
 						node.requests.Set(id, id)
 						return nil
