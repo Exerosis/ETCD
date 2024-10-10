@@ -774,13 +774,13 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			Clients:            make([]paxos.Client, 10),
 			Failed:             make([]bool, 10),
 			Encoder:            encoder,
-			Total:              len(NODES),
+			Total:              uint32(len(NODES)),
 			Entries:            sync.Map{},
 			Quorum:             QUORUM,
 			Parity:             PARITY,
 			Segments:           SEGMENTS,
 			Leader:             0,
-			Index:              index,
+			Index:              uint32(index),
 			WriteRequestWaiter: sync.Map{},
 		}
 		go func() {
