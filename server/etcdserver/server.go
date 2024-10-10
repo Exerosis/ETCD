@@ -257,6 +257,8 @@ var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
 var FAILURES = LoadInt("FAILURES")
 var SEGMENTS = LoadInt("SEGMENTS")
+var FAILURES_ENABLED = LoadEnv("FAILURES_ENABLED")
+var FAILURE_SLOT = LoadInt("FAILURE_SLOT")
 var PARITY = len(NODES) - SEGMENTS
 var QUORUM = SEGMENTS + FAILURES // pass in segments later
 
@@ -771,6 +773,8 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 
 		srv.paxos = paxos.Node{
+			FailSlot:           uint32(FAILURE_SLOT),
+			Failures:           FAILURES_ENABLED,
 			Clients:            make([]paxos.Client, 10),
 			Failed:             make([]bool, 10),
 			Encoder:            encoder,
