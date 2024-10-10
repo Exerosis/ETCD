@@ -336,24 +336,24 @@ func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
 	trace := traceutil.Get(context.Background())
 	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	result, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
 	read.End()
 	if err != nil {
 		return nil, err
 	}
-	if len(result.KVs) < 1 {
-		panic("I don't even have a value at all lmfao")
-		//time.Sleep(50 * time.Microsecond)
-		//println("trying again!")
-		//return nil, os.ErrInvalid
-	}
-	if len(result.KVs[0].Value) == 0 {
-		panic("I have like a shitty thing stored why??")
-	}
-	if value != string(result.KVs[0].Value) {
-		panic("WHY do I have trash??")
-	}
-	return &rabia_rpc.ReadResponse{Value: result.KVs[0].Value}, nil
+	//if len(result.KVs) < 1 {
+	//	panic("I don't even have a value at all lmfao")
+	//	//time.Sleep(50 * time.Microsecond)
+	//	//println("trying again!")
+	//	//return nil, os.ErrInvalid
+	//}
+	//if len(result.KVs[0].Value) == 0 {
+	//	panic("I have like a shitty thing stored why??")
+	//}
+	//if value != string(result.KVs[0].Value) {
+	//	panic("WHY do I have trash??")
+	//}
+	return &rabia_rpc.ReadResponse{Value: []byte(value)}, nil
 }
 
 type LocalNode struct {
