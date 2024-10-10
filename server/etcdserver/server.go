@@ -257,8 +257,8 @@ var RS_PAXOS = LoadEnv("RS_PAXOS")
 var NODES = LoadAddresses("NODES")
 var FAILURES = LoadInt("FAILURES")
 var SEGMENTS = LoadInt("SEGMENTS")
-var FAILURES_ENABLED = true
-var FAILURE_SLOT = 3000
+var FAILURES_ENABLED = LoadEnv("FAILURES_ENABLED")
+var FAILURE_SLOT = LoadInt("FAILURE_SLOT")
 var PARITY = len(NODES) - SEGMENTS
 var QUORUM = SEGMENTS + FAILURES // pass in segments later
 
