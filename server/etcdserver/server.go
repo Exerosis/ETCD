@@ -772,6 +772,10 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 			panic("CAN'T FIND NODE!")
 		}
 
+		if FAILURES_ENABLED {
+			fmt.Printf("ENABLED FAILURES WITH SLOT: %d\n", FAILURE_SLOT)
+		}
+
 		srv.paxos = paxos.Node{
 			FailSlot:           uint32(FAILURE_SLOT),
 			Failures:           FAILURES_ENABLED,
