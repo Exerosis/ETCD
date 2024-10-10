@@ -127,6 +127,7 @@ func (s *EtcdServer) PaxosGet(ctx context.Context, r *pb.RangeRequest) (*pb.Rang
 
 func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Paxos Put")
+	// etcd.write(k,v)
 	s.paxos.ForwardWrite(r.Key, r.Value)
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
