@@ -879,6 +879,12 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		}
 		println("Connected")
 	} else if RACOS {
+		var index = 0
+		for i, other := range NODES {
+			if other == address {
+				index = i
+			}
+		}
 		node, err := NewRacos(srv, address, NODES, uint16(FAILURES), 50650)
 		if err != nil {
 			panic(err)
@@ -893,6 +899,9 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		go func() {
 			for {
 				err := node.rabia.Consume(func(i uint64, id uint64, data []byte) error {
+					if FAILURES_ENABLED && i == uint64(FAILURE_SLOT) && index == FAILURE_SLOT%len(NODES) {
+						panic("time to die :)")
+					}
 					if len(data) == 1 {
 						node.requests.Set(id, "")
 						return nil
