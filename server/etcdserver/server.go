@@ -283,6 +283,14 @@ type Racos struct {
 	readersOutbound []rabia.Connection
 }
 
+func splitSeggy(segment []byte) (int, []byte, []byte) {
+	var index = int(segment[0])
+	var length = binary.LittleEndian.Uint32(segment[1:])
+	var key = segment[5 : length+5]
+	var data = segment[length+5:]
+	return index, key, data
+}
+
 func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 	var segments = make([][]byte, SEGMENTS+PARITY)
 	var group sync.WaitGroup
@@ -293,7 +301,7 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		go func(i int, client rabia_rpc.NodeClient) {
 			response, err := client.Read(context.Background(), request)
 			if err != nil {
-				panic(err)
+				return
 			}
 			if atomic.AddUint32(&count, 1) <= uint32(SEGMENTS) {
 				segments[i] = response.Value
@@ -302,8 +310,15 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		}(i, client)
 	}
 	group.Wait()
-	//segments[0] = nil
-	//segments[1] = nil
+	//fmt.Println("things")
+	for i := 0; i < SEGMENTS+PARITY; i++ {
+		if segments[i] != nil {
+			_, _, data := splitSeggy(segments[i])
+			//fmt.Println("Index: ", index, " Key: ", string(key))
+			segments[i] = data
+		}
+	}
+
 	var err = racos.encoder.ReconstructData(segments)
 	if err != nil {
 		return nil, err
@@ -313,26 +328,28 @@ func (racos *Racos) QuorumRead(id uint64) ([]byte, error) {
 		combinedData = append(combinedData, segments[i]...)
 	}
 	var length = binary.LittleEndian.Uint32(combinedData)
+	println(length)
 	return combinedData[4 : length+4], nil
 }
 
 func (racos *Racos) Read(ctx context.Context, in *rabia_rpc.ReadRequest) (*rabia_rpc.ReadResponse, error) {
-	trace := traceutil.Get(context.Background())
-	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
-	defer read.End()
-	var tvvv = racos.requests.WaitFor(in.Slot)
+	var value = racos.requests.WaitFor(in.Slot)
 	var testTest = make([]byte, 8)
 	binary.LittleEndian.PutUint64(testTest, in.Slot)
+	trace := traceutil.Get(context.Background())
+	var read = racos.server.KV().Read(mvcc.ConcurrentReadTxMode, trace)
 	_, err := read.Range(ctx, testTest, nil, mvcc.RangeOptions{})
+	read.End()
 	if err != nil {
 		return nil, err
 	}
 	//if len(result.KVs) < 1 {
-	//	time.Sleep(50 * time.Microsecond)
-	//	println("trying again!")
+	//	panic("I don't even have a value at all lmfao")
+	//	//time.Sleep(50 * time.Microsecond)
+	//	//println("trying again!")
 	//	//return nil, os.ErrInvalid
 	//}
-	return &rabia_rpc.ReadResponse{Value: []byte(tvvv)}, nil
+	return &rabia_rpc.ReadResponse{Value: []byte(value)}, nil
 }
 
 type LocalNode struct {
@@ -880,15 +897,15 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 						node.requests.Set(id, "")
 						return nil
 					}
-					var length = binary.LittleEndian.Uint32(data)
-					var key = data[4 : length+4]
+					var length = binary.LittleEndian.Uint32(data[1:])
+					var key = data[5 : length+5]
 					trace := traceutil.Get(context.Background())
 					var write = srv.KV().Write(trace)
 					var testTest = make([]byte, 8)
 					binary.LittleEndian.PutUint64(testTest, id)
-					write.Put(testTest, data[length+4:], 0)
+					write.Put(testTest, data[length+5:], 0)
 					write.End()
-					node.requests.Set(id, string(data[length+4:]))
+					node.requests.Set(id, string(data))
 					node.keysLock.Lock()
 					node.keys[string(key)] = id
 					node.keysLock.Unlock()

@@ -251,7 +251,7 @@ func (s *EtcdServer) RacosPut(ctx context.Context, r *pb.PutRequest) (*pb.PutRes
 	var header = append(length, r.Key...)
 	var proposals = make([][]byte, SEGMENTS+PARITY)
 	for i := range segments {
-		proposals[i] = append(header, segments[i]...)
+		proposals[i] = append(append([]byte{byte(i)}, header...), segments[i]...)
 	}
 	s.racos.requests.Delete(id)
 	err = s.racos.rabia.ProposeEach(id, proposals)
