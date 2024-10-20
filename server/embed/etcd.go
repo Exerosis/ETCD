@@ -186,7 +186,7 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 		AutoCompactionRetention:                  autoCompactionRetention,
 		AutoCompactionMode:                       cfg.AutoCompactionMode,
 		QuotaBackendBytes:                        20000000000,
-		BackendBatchLimit:                        3000,
+		BackendBatchLimit:                        1,
 		BackendFreelistType:                      backendFreelistType,
 		BackendBatchInterval:                     cfg.BackendBatchInterval,
 		MaxTxnOps:                                cfg.MaxTxnOps,
