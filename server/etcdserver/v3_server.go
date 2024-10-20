@@ -447,6 +447,10 @@ func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResp
 		fmt.Printf("Didnt write full bytes?!")
 	}
 
+	if err := s.testFile.Sync(); err != nil {
+		panic(err)
+	}
+
 	//trace := traceutil.Get(context.TODO())
 	//var write = s.KV().Write(trace)
 	//write.Put(r.Key, r.Value, 0)
