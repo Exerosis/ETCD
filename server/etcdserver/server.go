@@ -449,6 +449,8 @@ func NewRabia(address string, addresses []string, f uint16, pipes ...uint16) (*R
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
 	// inflightSnapshots holds count the number of snapshots currently inflight.
+	fileLock          sync.Mutex
+	testFile          *os.File
 	inflightSnapshots int64  // must use atomic operations to access; keep 64-bit aligned.
 	appliedIndex      uint64 // must use atomic operations to access; keep 64-bit aligned.
 	committedIndex    uint64 // must use atomic operations to access; keep 64-bit aligned.
@@ -714,7 +716,13 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	fmt.Printf("Local: %s", address)
 
 	heartbeat := time.Duration(100_000) * time.Millisecond
+	file, fileerr := os.OpenFile("testFile", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if fileerr != nil {
+		panic(fileerr)
+	}
 	srv = &EtcdServer{
+		fileLock:              sync.Mutex{},
+		testFile:              file,
 		readych:               make(chan struct{}),
 		Cfg:                   cfg,
 		lgMu:                  new(sync.RWMutex),

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -436,11 +437,21 @@ func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResp
 	//if err != nil {
 	//	return nil, err
 	//}
+	s.fileLock.Lock()
+	write, err := s.testFile.Write(r.Value)
+	if err != nil {
+		return nil, err
+	}
 
-	trace := traceutil.Get(context.TODO())
-	var write = s.KV().Write(trace)
-	write.Put(r.Key, r.Value, 0)
-	write.End()
+	if write != len(r.Value) {
+		fmt.Printf("Didnt write full bytes?!")
+	}
+
+	//trace := traceutil.Get(context.TODO())
+	//var write = s.KV().Write(trace)
+	//write.Put(r.Key, r.Value, 0)
+	//write.End()
+	s.fileLock.Unlock()
 
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
