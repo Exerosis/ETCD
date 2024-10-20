@@ -1,8 +1,7 @@
 module go.etcd.io/etcd/v3
 
-go 1.21
+go 1.19
 
-toolchain go1.21.4
 
 //toolchain go1.21.4
 
