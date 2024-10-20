@@ -1,6 +1,8 @@
 module go.etcd.io/etcd/server/v3
 
-go 1.19
+go 1.21
+
+toolchain go1.21.4
 
 //toolchain go1.21.4
 
@@ -76,6 +78,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.2 // indirect
 	go.opentelemetry.io/otel/metric v0.34.0 // indirect

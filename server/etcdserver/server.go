@@ -27,6 +27,7 @@ import (
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/exerosis/RabiaGo/rabia_rpc"
 	"github.com/klauspost/reedsolomon"
+	"github.com/tecbot/gorocksdb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"math"
@@ -449,6 +450,7 @@ func NewRabia(address string, addresses []string, f uint16, pipes ...uint16) (*R
 // EtcdServer is the production implementation of the Server interface
 type EtcdServer struct {
 	// inflightSnapshots holds count the number of snapshots currently inflight.
+	rocks             *gorocksdb.DB
 	fileLock          sync.Mutex
 	testFile          *os.File
 	inflightSnapshots int64  // must use atomic operations to access; keep 64-bit aligned.
@@ -720,7 +722,15 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	if fileerr != nil {
 		panic(fileerr)
 	}
+	opts := gorocksdb.NewDefaultOptions()
+	opts.SetCreateIfMissing(true)
+	rocks, err := gorocksdb.OpenDb(opts, "testPath")
+	if err != nil {
+		panic(err)
+	}
+
 	srv = &EtcdServer{
+		rocks:                 rocks,
 		fileLock:              sync.Mutex{},
 		testFile:              file,
 		readych:               make(chan struct{}),
