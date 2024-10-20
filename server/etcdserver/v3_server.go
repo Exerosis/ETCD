@@ -15,11 +15,11 @@
 package etcdserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -438,18 +438,26 @@ func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResp
 	//	return nil, err
 	//}
 	s.fileLock.Lock()
-	write, err := s.testFile.Write(r.Value)
+	writer := bufio.NewWriter(s.testFile)
+	_, err := writer.Write(r.Value)
 	if err != nil {
-		return nil, err
-	}
-
-	if write != len(r.Value) {
-		fmt.Printf("Didnt write full bytes?!")
-	}
-
-	if err := s.testFile.Sync(); err != nil {
 		panic(err)
 	}
+	if writer.Flush() != nil {
+		panic(err)
+	}
+	//write, err := s.testFile.Write(r.Value)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if write != len(r.Value) {
+	//	fmt.Printf("Didnt write full bytes?!")
+	//}
+	//
+	//if err := s.testFile.Sync(); err != nil {
+	//	panic(err)
+	//}
 
 	//trace := traceutil.Get(context.TODO())
 	//var write = s.KV().Write(trace)
