@@ -431,12 +431,28 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 // etc
 func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 
-	ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
-	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.PutResponse), nil
+	//ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
+	//resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	trace := traceutil.Get(context.TODO())
+	var write = s.KV().Write(trace)
+	write.Put(r.Key, r.Value, 0)
+	write.End()
+
+	return &pb.PutResponse{
+		Header: &pb.ResponseHeader{},
+		PrevKv: &mvccpb.KeyValue{
+			Key:            r.Key,
+			CreateRevision: 0,
+			ModRevision:    0,
+			Version:        0,
+			Value:          make([]byte, 0), //hence empty value here
+			Lease:          0,
+		},
+	}, nil
 }
 func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	if RS_PAXOS {
