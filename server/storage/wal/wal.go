@@ -806,6 +806,8 @@ func (w *WAL) sync() error {
 
 	if w.unsafeNoSync {
 		return nil
+	} else {
+		fmt.Println("Syncing!")
 	}
 
 	start := time.Now()
