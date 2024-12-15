@@ -805,6 +805,7 @@ func (w *WAL) sync() error {
 	}
 
 	if w.unsafeNoSync {
+		fmt.Println("Not syncing!")
 		return nil
 	} else {
 		fmt.Println("Syncing!")
