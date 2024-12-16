@@ -799,6 +799,7 @@ func (w *WAL) cut() error {
 
 func (w *WAL) sync() error {
 	if w.encoder != nil {
+		fmt.Println("Found the encoder")
 		if err := w.encoder.flush(); err != nil {
 			return err
 		}
