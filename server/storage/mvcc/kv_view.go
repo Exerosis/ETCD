@@ -16,6 +16,7 @@ package mvcc
 
 import (
 	"context"
+	"fmt"
 
 	"go.etcd.io/etcd/pkg/v3/traceutil"
 	"go.etcd.io/etcd/server/v3/lease"
@@ -50,6 +51,7 @@ func (wv *writeView) DeleteRange(key, end []byte) (n, rev int64) {
 }
 
 func (wv *writeView) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
+	fmt.Printf("Called here?")
 	tw := wv.kv.Write(traceutil.TODO())
 	defer tw.End()
 	return tw.Put(key, value, lease)
