@@ -15,7 +15,6 @@
 package etcdserver
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -431,51 +430,12 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 // proxied to the leader and the leader will get the original call to EtcdServer*#Put and call this again
 // etc
 func (s *EtcdServer) RaftPut(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
-
-	//ctx = context.WithValue(ctx, traceutil.StartTimeKey, time.Now())
-	//resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
-	//if err != nil {
-	//	return nil, err
-	//}
-	s.fileLock.Lock()
-	writer := bufio.NewWriter(s.testFile)
-	_, err := writer.Write(r.Value)
+	ctx = context.WithValue(ctx, traceutil.StartTimeKey{}, time.Now())
+	resp, err := s.raftRequest(ctx, pb.InternalRaftRequest{Put: r})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	if writer.Flush() != nil {
-		panic(err)
-	}
-	//write, err := s.testFile.Write(r.Value)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//if write != len(r.Value) {
-	//	fmt.Printf("Didnt write full bytes?!")
-	//}
-	//
-	//if err := s.testFile.Sync(); err != nil {
-	//	panic(err)
-	//}
-
-	//trace := traceutil.Get(context.TODO())
-	//var write = s.KV().Write(trace)
-	//write.Put(r.Key, r.Value, 0)
-	//write.End()
-	s.fileLock.Unlock()
-
-	return &pb.PutResponse{
-		Header: &pb.ResponseHeader{},
-		PrevKv: &mvccpb.KeyValue{
-			Key:            r.Key,
-			CreateRevision: 0,
-			ModRevision:    0,
-			Version:        0,
-			Value:          make([]byte, 0), //hence empty value here
-			Lease:          0,
-		},
-	}, nil
+	return resp.(*pb.PutResponse), nil
 }
 func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	if RS_PAXOS {
