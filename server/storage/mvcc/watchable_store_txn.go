@@ -15,7 +15,6 @@
 package mvcc
 
 import (
-	"fmt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/pkg/v3/traceutil"
 )
@@ -43,9 +42,9 @@ func (tw *watchableStoreTxnWrite) End() {
 	// when asynchronous event posting checks the current store revision
 	tw.s.mu.Lock()
 	tw.s.notify(rev, evs)
-	tw.TxnWrite.End()
+	//tw.TxnWrite.End()
 	tw.s.mu.Unlock()
-	fmt.Println("Ends here")
+	//fmt.Println("Ends here")
 }
 
 type watchableStoreTxnWrite struct {
