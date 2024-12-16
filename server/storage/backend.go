@@ -50,7 +50,7 @@ func newBackend(cfg config.ServerConfig, hooks backend.Hooks) backend.Backend {
 		// permit 10% excess over quota for disarm
 		bcfg.MmapSize = uint64(cfg.QuotaBackendBytes + cfg.QuotaBackendBytes/10)
 	}
-	fmt.Printf("Bathc interval?: %d\n", bcfg.BatchLimit)
+	fmt.Printf("Bathc interval?: limit=%d interval=%d\n", bcfg.BatchLimit, bcfg.BatchInterval)
 	bcfg.Mlock = cfg.ExperimentalMemoryMlock
 	bcfg.Hooks = hooks
 	return backend.New(bcfg)
