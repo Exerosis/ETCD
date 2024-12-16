@@ -42,9 +42,8 @@ func (tw *watchableStoreTxnWrite) End() {
 	// when asynchronous event posting checks the current store revision
 	tw.s.mu.Lock()
 	tw.s.notify(rev, evs)
-	//tw.TxnWrite.End()
+	tw.TxnWrite.End()
 	tw.s.mu.Unlock()
-	//fmt.Println("Ends here")
 }
 
 type watchableStoreTxnWrite struct {
@@ -53,6 +52,5 @@ type watchableStoreTxnWrite struct {
 }
 
 func (s *watchableStore) Write(trace *traceutil.Trace) TxnWrite {
-	//fmt.Println("Writes here 2?")
 	return &watchableStoreTxnWrite{s.store.Write(trace), s}
 }
