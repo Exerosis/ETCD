@@ -45,6 +45,7 @@ func (tw *watchableStoreTxnWrite) End() {
 	tw.s.notify(rev, evs)
 	tw.TxnWrite.End()
 	tw.s.mu.Unlock()
+	fmt.Println("Ends here")
 }
 
 type watchableStoreTxnWrite struct {
@@ -53,6 +54,6 @@ type watchableStoreTxnWrite struct {
 }
 
 func (s *watchableStore) Write(trace *traceutil.Trace) TxnWrite {
-	fmt.Println("Writes here 2?")
+	//fmt.Println("Writes here 2?")
 	return &watchableStoreTxnWrite{s.store.Write(trace), s}
 }
