@@ -607,9 +607,10 @@ func openWALFromSnapshot(cfg config.ServerConfig, snapshot *raftpb.Snapshot) (*w
 		if err != nil {
 			cfg.Logger.Fatal("failed to open WAL", zap.Error(err))
 		}
-		if cfg.UnsafeNoFsync {
-			w.SetUnsafeNoFsync()
-		}
+		w.SetUnsafeNoFsync()
+		//if cfg.UnsafeNoFsync {
+		//	w.SetUnsafeNoFsync()
+		//}
 		wmetadata, st, ents, err := w.ReadAll()
 		if err != nil {
 			w.Close()
@@ -649,9 +650,10 @@ func bootstrapNewWAL(cfg config.ServerConfig, cl *bootstrapedCluster) *bootstrap
 	if err != nil {
 		cfg.Logger.Panic("failed to create WAL", zap.Error(err))
 	}
-	if cfg.UnsafeNoFsync {
-		w.SetUnsafeNoFsync()
-	}
+	w.SetUnsafeNoFsync()
+	//if cfg.UnsafeNoFsync {
+	//	w.SetUnsafeNoFsync()
+	//}
 	return &bootstrappedWAL{
 		lg: cfg.Logger,
 		w:  w,

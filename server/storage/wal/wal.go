@@ -799,18 +799,16 @@ func (w *WAL) cut() error {
 
 func (w *WAL) sync() error {
 	if w.encoder != nil {
-		fmt.Println("Found the encoder")
 		if err := w.encoder.flush(); err != nil {
 			return err
 		}
 	}
 
 	if w.unsafeNoSync {
-		fmt.Println("Not syncing!")
 		return nil
-	} else {
-		fmt.Println("Syncing!")
 	}
+
+	fmt.Println("never makes it here")
 
 	start := time.Now()
 	err := fileutil.Fdatasync(w.tail().File)
@@ -907,7 +905,6 @@ func (w *WAL) Close() error {
 }
 
 func (w *WAL) saveEntry(e *raftpb.Entry) error {
-	fmt.Println("Saving entry?")
 	// TODO: add MustMarshalTo to reduce one allocation.
 	b := pbutil.MustMarshal(e)
 	rec := &walpb.Record{Type: EntryType, Data: b}
