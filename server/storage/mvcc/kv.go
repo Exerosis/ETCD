@@ -171,6 +171,7 @@ func (kv *MemoryKV) Rev() int64 {
 }
 
 func (kv *MemoryKV) Range(ctx context.Context, key, end []byte, ro RangeOptions) (*RangeResult, error) {
+	println("Range!")
 	var result RangeResult
 	result.Rev = 1
 	startValue, startExists := indexStore.Load(string(key))
@@ -194,6 +195,7 @@ func (kv *MemoryKV) Range(ctx context.Context, key, end []byte, ro RangeOptions)
 }
 
 func (kv *MemoryKV) DeleteRange(key, end []byte) (n, rev int64) {
+	println("Deleting!")
 	deleted := int64(0)
 	startValue, startExists := indexStore.Load(string(key))
 	endValue, endExists := indexStore.Load(string(end))
@@ -217,6 +219,7 @@ func (kv *MemoryKV) DeleteRange(key, end []byte) (n, rev int64) {
 }
 
 func (kv *MemoryKV) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
+	println("Putting!")
 	nextIndex := atomic.AddInt64(&storeIndex, 1)
 	memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
 	indexStore.Store(string(key), nextIndex)
