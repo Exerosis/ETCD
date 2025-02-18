@@ -227,12 +227,35 @@ func (kv *MemoryKV) Read(mode ReadTxMode, trace *traceutil.Trace) TxnRead {
 	panic("read!")
 }
 
+type Hasher struct {
+}
+
+func (h *Hasher) Hash() (hash uint32, revision int64, err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (h *Hasher) HashByRev(rev int64) (hash KeyValueHash, currentRev int64, err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (h *Hasher) Store(valueHash KeyValueHash) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (h *Hasher) Hashes() []KeyValueHash {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (kv *MemoryKV) Write(trace *traceutil.Trace) TxnWrite {
 	panic("write!")
 }
 
 func (kv *MemoryKV) HashStorage() HashStorage {
-	panic("hash storage!")
+	return &Hasher{}
 }
 
 func (kv *MemoryKV) Index() index {
