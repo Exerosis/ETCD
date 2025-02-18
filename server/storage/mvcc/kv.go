@@ -296,8 +296,7 @@ func (w *WriteTransaction) Range(ctx context.Context, key, end []byte, ro RangeO
 }
 
 func (w *WriteTransaction) End() {
-	//TODO implement me
-	panic("implement me")
+
 }
 
 func (w *WriteTransaction) DeleteRange(key, end []byte) (n, rev int64) {
