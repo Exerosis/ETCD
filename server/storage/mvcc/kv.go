@@ -224,34 +224,11 @@ func (kv *MemoryKV) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
 }
 
 func (kv *MemoryKV) Read(mode ReadTxMode, trace *traceutil.Trace) TxnRead {
-	panic("read!")
-}
-
-type Hasher struct {
-}
-
-func (h *Hasher) Hash() (hash uint32, revision int64, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (h *Hasher) HashByRev(rev int64) (hash KeyValueHash, currentRev int64, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (h *Hasher) Store(valueHash KeyValueHash) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (h *Hasher) Hashes() []KeyValueHash {
-	//TODO implement me
-	panic("implement me")
+	return &ReadTransaction{kv: kv}
 }
 
 func (kv *MemoryKV) Write(trace *traceutil.Trace) TxnWrite {
-	panic("write!")
+	return &WriteTransaction{kv: kv}
 }
 
 func (kv *MemoryKV) HashStorage() HashStorage {
@@ -281,4 +258,77 @@ func (kv *MemoryKV) Restore(b backend.Backend) error {
 
 func (kv *MemoryKV) Close() error {
 	return nil
+}
+
+type Hasher struct {
+}
+
+func (h *Hasher) Hash() (hash uint32, revision int64, err error) {
+	panic("implement hash")
+}
+
+func (h *Hasher) HashByRev(rev int64) (hash KeyValueHash, currentRev int64, err error) {
+	panic("implement hashByRev")
+}
+
+func (h *Hasher) Store(valueHash KeyValueHash) {
+	panic("implement store")
+}
+
+func (h *Hasher) Hashes() []KeyValueHash {
+	panic("implement hashes")
+}
+
+type WriteTransaction struct {
+	kv *MemoryKV
+}
+
+func (w *WriteTransaction) FirstRev() int64 {
+	return w.kv.FirstRev()
+}
+
+func (w *WriteTransaction) Rev() int64 {
+	return w.kv.Rev()
+}
+
+func (w *WriteTransaction) Range(ctx context.Context, key, end []byte, ro RangeOptions) (r *RangeResult, err error) {
+	return w.kv.Range(ctx, key, end, ro)
+}
+
+func (w *WriteTransaction) End() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w *WriteTransaction) DeleteRange(key, end []byte) (n, rev int64) {
+	return w.kv.DeleteRange(key, end)
+}
+
+func (w *WriteTransaction) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
+	return w.kv.Put(key, value, lease)
+}
+
+func (w *WriteTransaction) Changes() []mvccpb.KeyValue {
+	//TODO implement me
+	panic("implement me")
+}
+
+type ReadTransaction struct {
+	kv *MemoryKV
+}
+
+func (read *ReadTransaction) FirstRev() int64 {
+	return read.kv.FirstRev()
+}
+
+func (read *ReadTransaction) Rev() int64 {
+	return read.kv.Rev()
+}
+
+func (read *ReadTransaction) Range(ctx context.Context, key, end []byte, ro RangeOptions) (r *RangeResult, err error) {
+	return read.kv.Range(ctx, key, end, ro)
+}
+
+func (read *ReadTransaction) End() {
+
 }
