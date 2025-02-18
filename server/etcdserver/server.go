@@ -772,7 +772,7 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		return nil, err
 	}
 
-	_ := mvcc.StoreConfig{
+	_ = mvcc.StoreConfig{
 		CompactionBatchLimit:    cfg.CompactionBatchLimit,
 		CompactionSleepInterval: cfg.CompactionSleepInterval,
 	}
