@@ -16,6 +16,8 @@ package mvcc
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/pkg/v3/traceutil"
@@ -146,4 +148,114 @@ type Watchable interface {
 	// NewWatchStream returns a WatchStream that can be used to
 	// watch events happened or happening on the KV.
 	NewWatchStream() WatchStream
+}
+
+type KeyValueStore struct {
+	value []byte
+	key   string
+}
+
+var storeIndex = int64(0)
+var indexStore = sync.Map{}
+var memoryStore = sync.Map{}
+
+type MemoryKV struct {
+}
+
+func (kv *MemoryKV) FirstRev() int64 {
+	return 1
+}
+
+func (kv *MemoryKV) Rev() int64 {
+	return 1
+}
+
+func (kv *MemoryKV) Range(ctx context.Context, key, end []byte, ro RangeOptions) (*RangeResult, error) {
+	var result RangeResult
+	result.Rev = 1
+	startValue, startExists := indexStore.Load(string(key))
+	endValue, endExists := indexStore.Load(string(end))
+	if endExists && startExists {
+		startIndex, ok1 := startValue.(int64)
+		endIndex, ok2 := endValue.(int64)
+		if !ok1 || !ok2 {
+			return &result, nil
+		}
+
+		for i := startIndex; i <= endIndex; i++ {
+			value, ok := memoryStore.Load(i)
+			if ok {
+				result.KVs = append(result.KVs, mvccpb.KeyValue{Key: []byte(value.(KeyValueStore).key), Value: value.(KeyValueStore).value})
+			}
+		}
+	}
+
+	return &result, nil
+}
+
+func (kv *MemoryKV) DeleteRange(key, end []byte) (n, rev int64) {
+	deleted := int64(0)
+	startValue, startExists := indexStore.Load(string(key))
+	endValue, endExists := indexStore.Load(string(end))
+	if endExists && startExists {
+		startIndex, ok1 := startValue.(int64)
+		endIndex, ok2 := endValue.(int64)
+		if !ok1 || !ok2 {
+			return deleted, 1
+		}
+
+		for i := startIndex; i <= endIndex; i++ {
+			value, ok := memoryStore.LoadAndDelete(i)
+			if ok {
+				indexStore.Delete(value.(KeyValueStore).key)
+				deleted++
+			}
+		}
+	}
+
+	return deleted, 1
+}
+
+func (kv *MemoryKV) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
+	nextIndex := atomic.AddInt64(&storeIndex, 1)
+	memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
+	indexStore.Store(string(key), nextIndex)
+	return 1
+}
+
+func (kv *MemoryKV) Read(mode ReadTxMode, trace *traceutil.Trace) TxnRead {
+	panic("read!")
+}
+
+func (kv *MemoryKV) Write(trace *traceutil.Trace) TxnWrite {
+	panic("write!")
+}
+
+func (kv *MemoryKV) HashStorage() HashStorage {
+	panic("hash storage!")
+}
+
+func (kv *MemoryKV) Index() index {
+	panic("index!")
+}
+
+func (kv *MemoryKV) NewWatchStream() WatchStream {
+	panic("watch stream!")
+}
+
+func (kv *MemoryKV) Compact(trace *traceutil.Trace, rev int64) (<-chan struct{}, error) {
+	done := make(chan struct{})
+	close(done)
+	return done, nil
+}
+
+func (kv *MemoryKV) Commit() {
+}
+
+func (kv *MemoryKV) Restore(b backend.Backend) error {
+	return nil
+}
+
+func (kv *MemoryKV) Close() error {
+	return nil
 }
