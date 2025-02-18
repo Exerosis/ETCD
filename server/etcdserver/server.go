@@ -772,15 +772,15 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		return nil, err
 	}
 
-	mvccStoreConfig := mvcc.StoreConfig{
-		CompactionBatchLimit:    cfg.CompactionBatchLimit,
-		CompactionSleepInterval: cfg.CompactionSleepInterval,
-	}
+	//mvccStoreConfig := mvcc.StoreConfig{
+	//	CompactionBatchLimit:    cfg.CompactionBatchLimit,
+	//	CompactionSleepInterval: cfg.CompactionSleepInterval,
+	//}
 
-	//kv := mvcc.MemoryKV{}
+	kv := mvcc.MemoryKV{}
 	//
-	//srv.kv = &kv
-	srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
+	srv.kv = &kv
+	//srv.kv = mvcc.New(srv.Logger(), srv.be, srv.lessor, mvccStoreConfig)
 
 	//if pineapple is selected on startup it runs this to start he node
 	if RS_PAXOS {
