@@ -21,6 +21,7 @@ import (
 	"go.etcd.io/etcd/server/v3/lease"
 	"go.etcd.io/etcd/server/v3/storage/backend"
 	"sync"
+	"sync/atomic"
 )
 
 type RangeOptions struct {
@@ -165,7 +166,7 @@ func (kv *MemoryKV) FirstRev() int64 {
 }
 
 func (kv *MemoryKV) Rev() int64 {
-	return 1
+	return atomic.LoadInt64(&storeIndex)
 }
 
 func (kv *MemoryKV) Range(ctx context.Context, key, end []byte, ro RangeOptions) (*RangeResult, error) {
@@ -217,11 +218,10 @@ func (kv *MemoryKV) DeleteRange(key, end []byte) (n, rev int64) {
 }
 
 func (kv *MemoryKV) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
-	//println("Putting!")
-	//nextIndex := atomic.AddInt64(&storeIndex, 1)
-	//memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
-	//indexStore.Store(string(key), nextIndex)
-	return 1
+	nextIndex := atomic.AddInt64(&storeIndex, 1)
+	memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
+	indexStore.Store(string(key), nextIndex)
+	return nextIndex
 }
 
 func (kv *MemoryKV) Read(mode ReadTxMode, trace *traceutil.Trace) TxnRead {
