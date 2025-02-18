@@ -16,13 +16,11 @@ package mvcc
 
 import (
 	"context"
-	"sync"
-	"sync/atomic"
-
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/pkg/v3/traceutil"
 	"go.etcd.io/etcd/server/v3/lease"
 	"go.etcd.io/etcd/server/v3/storage/backend"
+	"sync"
 )
 
 type RangeOptions struct {
@@ -219,10 +217,10 @@ func (kv *MemoryKV) DeleteRange(key, end []byte) (n, rev int64) {
 }
 
 func (kv *MemoryKV) Put(key, value []byte, lease lease.LeaseID) (rev int64) {
-	println("Putting!")
-	nextIndex := atomic.AddInt64(&storeIndex, 1)
-	memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
-	indexStore.Store(string(key), nextIndex)
+	//println("Putting!")
+	//nextIndex := atomic.AddInt64(&storeIndex, 1)
+	//memoryStore.Store(nextIndex, KeyValueStore{value, string(key)})
+	//indexStore.Store(string(key), nextIndex)
 	return 1
 }
 
