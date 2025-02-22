@@ -129,6 +129,10 @@ func (s *EtcdServer) PaxosPut(r *pb.PutRequest) (*pb.PutResponse, error) {
 	//fmt.Println("Paxos Put")
 	// etcd.write(k,v)
 	//s.paxos.ForwardWrite(r.Key, r.Value)
+	trace := traceutil.Get(context.TODO())
+	var write = s.KV().Write(trace)
+	write.Put(r.Key, r.Value, 0)
+	write.End()
 	return &pb.PutResponse{
 		Header: &pb.ResponseHeader{},
 		PrevKv: &mvccpb.KeyValue{
