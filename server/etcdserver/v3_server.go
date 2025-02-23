@@ -415,7 +415,7 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 // yeah basically, it's just a message from the client that says what values to add and some other etcd info
 
 var opCount int32
-var targetOps int32 = 250000
+var targetOps int32 = 150000
 var totalDuration int64
 
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
@@ -438,14 +438,16 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	}
 
 	result, err := s.RaftPut(ctx, r)
-	duration := time.Since(startTime).Nanoseconds()
-	total := atomic.AddInt64(&totalDuration, duration)
-	if ops == targetOps {
-		averagePerOp := time.Duration(total / int64(targetOps))
-		average := float64(targetOps) / averagePerOp.Seconds()
-		fmt.Printf("Total ops: %d\n", ops)
-		fmt.Printf("Average time per op: %d\n", averagePerOp)
-		fmt.Printf("Operations per second: %.2f\n", average)
+	if ops > targetOps {
+		duration := time.Since(startTime).Nanoseconds()
+		total := atomic.AddInt64(&totalDuration, duration)
+		if ops == (targetOps * 2) {
+			averagePerOp := time.Duration(total / int64(targetOps))
+			opsPerSecond := float64(targetOps) / time.Duration(total).Seconds()
+			fmt.Printf("Total ops: %d\n", ops)
+			fmt.Printf("Average time per op: %.2f\n", averagePerOp.Seconds())
+			fmt.Printf("Operations per second: %.2f\n", opsPerSecond)
+		}
 	}
 	return result, err
 }
