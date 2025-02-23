@@ -445,7 +445,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		average := float64(targetOps) / averagePerOp.Seconds()
 		fmt.Printf("Total ops: %d\n", ops)
 		fmt.Printf("Average time per op: %d\n", averagePerOp)
-		fmt.Printf("Operations per second: %d\n", average)
+		fmt.Printf("Operations per second: %.2f\n", average)
 	}
 	return result, err
 }
