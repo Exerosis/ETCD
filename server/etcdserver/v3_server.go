@@ -19,12 +19,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"fmt"
 	"github.com/exerosis/RabiaGo/rabia"
 	"github.com/klauspost/reedsolomon"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"math"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/exerosis/raft"
@@ -411,11 +413,19 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 // These functions get called when a client makes a call to a raft node
 // okay weird, and the request is just what message they want in?
 // yeah basically, it's just a message from the client that says what values to add and some other etcd info
+
+var opCount int32
+var targetOps int32 = 250000
+var totalDuration int64
+
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//Then it decides if it should use pineapple or raft to handle the request
 	//note that at this point the call may be to a follower or a leader.
+	ops := atomic.AddInt32(&opCount, 1)
+	startTime := time.Now()
 	if RS_PAXOS {
-		return s.PaxosPut(r)
+		result, err := s.PaxosPut(r)
+		return result, err
 	}
 	if MEMORY || PINEAPPLE {
 		return s.PineapplePut(ctx, r)
@@ -426,7 +436,18 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 	if RABIA {
 		return s.RabiaPut(ctx, r)
 	}
-	return s.RaftPut(ctx, r)
+
+	result, err := s.RaftPut(ctx, r)
+	duration := time.Since(startTime).Nanoseconds()
+	total := atomic.AddInt64(&totalDuration, duration)
+	if ops == targetOps {
+		averagePerOp := time.Duration(total / int64(targetOps))
+		average := float64(targetOps) / averagePerOp.Seconds()
+		fmt.Printf("Total ops: %d\n", ops)
+		fmt.Printf("Average time per op: %d\n", averagePerOp)
+		fmt.Printf("Operations per second: %d\n", average)
+	}
+	return result, err
 }
 
 // raft delegates it's put to the internal raft mechanisms which eventually goes to the raft library.
