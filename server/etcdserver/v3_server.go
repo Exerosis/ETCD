@@ -415,7 +415,7 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 // yeah basically, it's just a message from the client that says what values to add and some other etcd info
 
 var opCount int64
-var targetOps int64 = 25000
+var targetOps int64 = 5000
 var totalDuration int64
 
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
