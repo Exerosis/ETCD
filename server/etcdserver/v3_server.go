@@ -414,14 +414,14 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 // okay weird, and the request is just what message they want in?
 // yeah basically, it's just a message from the client that says what values to add and some other etcd info
 
-var opCount int32
-var targetOps int32 = 150000
+var opCount int64
+var targetOps int64 = 150000
 var totalDuration int64
 
 func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse, error) {
 	//Then it decides if it should use pineapple or raft to handle the request
 	//note that at this point the call may be to a follower or a leader.
-	ops := atomic.AddInt32(&opCount, 1)
+	ops := atomic.AddInt64(&opCount, 1)
 	startTime := time.Now()
 	if RS_PAXOS {
 		result, err := s.PaxosPut(r)
@@ -442,13 +442,9 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		duration := time.Since(startTime).Nanoseconds()
 		total := atomic.AddInt64(&totalDuration, duration)
 		if ops == (targetOps * 2) {
-			averagePerOp := (float64(total) / float64(targetOps)) / 1e9
-			opsPerSecond := float64(targetOps) / (float64(total) / 1e9)
 			fmt.Printf("Total: %.2f\n", float64(total))
-			fmt.Printf("Total ops: %.2f\n", float64(targetOps))
-			fmt.Printf("average per second: %.2f\n", float64(targetOps)/float64(targetOps))
-			fmt.Printf("Average time per op: %.2f\n", averagePerOp)
-			fmt.Printf("Operations per second: %.2f\n", opsPerSecond)
+			fmt.Printf("Ops: %d\n", ops)
+			fmt.Printf("Average time per op: %d\n", totalDuration/targetOps)
 		}
 	}
 	return result, err
