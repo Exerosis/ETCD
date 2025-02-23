@@ -429,6 +429,7 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		return s.RabiaPut(ctx, r)
 	}
 
+	println("got a put!")
 	//result, err := s.RaftPut(ctx, r)
 	result, err := s.PaxosPut(r)
 	//if ops > targetOps {
