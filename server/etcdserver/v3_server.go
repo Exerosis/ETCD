@@ -437,8 +437,8 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		return s.RabiaPut(ctx, r)
 	}
 
-	result, err := s.RaftPut(ctx, r)
-	//result, err := s.PaxosPut(r)
+	//result, err := s.RaftPut(ctx, r)
+	result, err := s.PaxosPut(r)
 	if ops > targetOps {
 		duration := time.Since(startTime).Nanoseconds()
 		total := atomic.AddInt64(&totalDuration, duration)
