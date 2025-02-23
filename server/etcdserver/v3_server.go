@@ -442,10 +442,10 @@ func (s *EtcdServer) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResponse
 		duration := time.Since(startTime).Nanoseconds()
 		total := atomic.AddInt64(&totalDuration, duration)
 		if ops == (targetOps * 2) {
-			averagePerOp := time.Duration(total / int64(targetOps))
-			opsPerSecond := float64(targetOps) / time.Duration(total).Seconds()
+			averagePerOp := (float64(total) / float64(targetOps)) / 1E9
+			opsPerSecond := float64(targetOps) / (float64(totalDuration) / 1e9)
 			fmt.Printf("Total ops: %d\n", ops)
-			fmt.Printf("Average time per op: %.2f\n", averagePerOp.Seconds())
+			fmt.Printf("Average time per op: %.2f\n", averagePerOp)
 			fmt.Printf("Operations per second: %.2f\n", opsPerSecond)
 		}
 	}
